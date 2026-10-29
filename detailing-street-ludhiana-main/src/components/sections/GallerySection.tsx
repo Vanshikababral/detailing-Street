@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import Image from 'next/image';
@@ -53,9 +53,40 @@ const galleryItems = [
 ];
 
 const videos = [
-  { src: '/videos/IMG_1036.mov' },
-  { src: '/videos/IMG_1149.mov' },
+  { src: '/videos/IMG_1036.mov', poster: '' },
+  { src: '/videos/IMG_1149.mov', poster: '' },
 ];
+
+// FIX: lazy video thumbnail — only plays in lightbox, not autoplay on page
+function VideoThumb({ src, onClick }: { src: string; onClick: () => void }) {
+  return (
+    <div
+      onClick={onClick}
+      className="relative cursor-pointer group rounded-2xl overflow-hidden border border-brand-black-border hover:border-brand-red/40 transition-all duration-300 bg-brand-black-card"
+      style={{ width: '180px', height: '320px' }}
+    >
+      {/* Static thumbnail placeholder instead of autoplay video */}
+      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand-black-card to-black/80">
+        <svg className="w-10 h-10 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+      </div>
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors duration-300" />
+      {/* Play button */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 group-hover:scale-110 transition-transform duration-300">
+          <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        </div>
+      </div>
+      <div className="absolute bottom-3 left-0 right-0 text-center">
+        <span className="text-white/50 text-xs">Tap to play</span>
+      </div>
+    </div>
+  );
+}
 
 export default function GallerySection() {
   const [activeCategory, setActiveCategory] = useState('All');
@@ -93,7 +124,7 @@ export default function GallerySection() {
           </p>
         </motion.div>
 
-        {/* Videos — Portrait/Reel Style */}
+        {/* Videos — Portrait/Reel Style — FIX: no autoplay, click-to-play in lightbox */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
@@ -101,31 +132,7 @@ export default function GallerySection() {
           className="flex justify-center gap-5 mb-12"
         >
           {videos.map((video, i) => (
-            <div
-              key={i}
-              onClick={() => setLightboxVideo(video.src)}
-              className="relative cursor-pointer group rounded-2xl overflow-hidden border border-brand-black-border hover:border-brand-red/40 transition-all duration-300"
-              style={{ width: '180px', height: '320px' }}
-            >
-              <video
-                src={video.src}
-                autoPlay
-                muted
-                loop
-                playsInline
-                className="w-full h-full object-cover"
-              />
-              {/* Dark overlay */}
-              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-300" />
-              {/* Play button */}
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
-                  <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
+            <VideoThumb key={i} src={video.src} onClick={() => setLightboxVideo(video.src)} />
           ))}
         </motion.div>
 

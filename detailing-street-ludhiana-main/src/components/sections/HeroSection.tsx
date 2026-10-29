@@ -7,26 +7,51 @@ import Image from 'next/image';
 export default function HeroSection() {
   const heroRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const mousePosRef = useRef({ x: 0, y: 0 });
+  const rafRef = useRef<number | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const scrollYRef = useRef(0);
   const [scrollY, setScrollY] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
 
+  // FIX: throttled scroll handler using rAF to avoid blocking the main thread
   useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY);
+    let ticking = false;
+    const handleScroll = () => {
+      scrollYRef.current = window.scrollY;
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setScrollY(scrollYRef.current);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // FIX: throttled mousemove handler using rAF — was firing setState on every pixel move
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!heroRef.current) return;
       const rect = heroRef.current.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width - 0.5) * 20;
-      const y = ((e.clientY - rect.top) / rect.height - 0.5) * 10;
-      setMousePos({ x, y });
+      mousePosRef.current = {
+        x: ((e.clientX - rect.left) / rect.width - 0.5) * 20,
+        y: ((e.clientY - rect.top) / rect.height - 0.5) * 10,
+      };
+      if (rafRef.current === null) {
+        rafRef.current = requestAnimationFrame(() => {
+          setMousePos({ ...mousePosRef.current });
+          rafRef.current = null;
+        });
+      }
     };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    };
   }, []);
 
   const toggleMute = () => {
@@ -45,7 +70,11 @@ export default function HeroSection() {
       {/* Video Background */}
       <div
         className="absolute inset-0 z-0"
-        style={{ transform: `translateY(${scrollY * 0.3}px)` }}
+        // FIX: use will-change + translateY on GPU-composited layer
+        style={{
+          transform: `translateY(${scrollY * 0.3}px)`,
+          willChange: 'transform',
+        }}
       >
         <video
           ref={videoRef}
@@ -55,8 +84,10 @@ export default function HeroSection() {
           playsInline
           className="absolute inset-0 w-full h-full object-cover scale-110"
           style={{
+            // FIX: removed the CSS transition on transform — it was fighting the mouse rAF loop
+            // and causing jank. GPU compositing via will-change handles smoothness.
             transform: `scale(1.1) translate(${mousePos.x * 0.15}px, ${mousePos.y * 0.1}px)`,
-            transition: 'transform 0.2s ease-out',
+            willChange: 'transform',
           }}
         >
           <source src="/videos/hero-bg.mp4" type="video/mp4" />
@@ -70,7 +101,7 @@ export default function HeroSection() {
           />
         </video>
 
-        {/* Dark overlays — thoda light */}
+        {/* Dark overlays */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 to-black" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-black/40" />
         {/* Red glow at bottom */}

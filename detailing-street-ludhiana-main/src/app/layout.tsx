@@ -1,9 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
-import Navbar from '@/components/layout/Navbar';
-import Footer from '@/components/layout/Footer';
-import FloatingButtons from '@/components/ui/FloatingButtons';
+import LayoutWrapper from '@/components/layout/LayoutWrapper';
 
 export const metadata: Metadata = {
   title: {
@@ -141,10 +139,7 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
       </head>
       <body className="antialiased">
-        <Navbar />
-        <main>{children}</main>
-        <Footer />
-        <FloatingButtons />
+        <LayoutWrapper>{children}</LayoutWrapper>
         <Toaster
           position="bottom-right"
           toastOptions={{
