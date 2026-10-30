@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Icon, type IconName } from './Icon';
 
 function formatLocalDate(date: Date) {
@@ -100,7 +101,7 @@ export function DashboardOverview() {
           <span className="overview-eyebrow">DETAILING STREET <i /> LUDHIANA</span>
           <h1 id="dashboard-title">Dashboard</h1>
           <p>Welcome back, Admin. Here’s what’s happening with your business today.</p>
-          <p className="overview-data-note">Connected directly to MongoDB Atlas</p>
+          <p className="overview-data-note">Connected directly to MongoDB Atlas via Django</p>
         </div>
         <div className="overview-header-actions">
           <time className="overview-date">
@@ -110,7 +111,7 @@ export function DashboardOverview() {
         </div>
       </header>
 
-      {/* Metrics Grid using original CSS classes */}
+      {/* Metrics Row 1 */}
       <section aria-label="Business metrics" className="overview-metrics">
         <MetricCard
           label="Total Bookings"
@@ -131,7 +132,7 @@ export function DashboardOverview() {
           value={loading ? '...' : `₹${data.metrics.revenue.toLocaleString('en-IN')}`}
           trend="From completed jobs"
           trendTone="positive"
-          icon="reports"
+          icon="revenue"
         />
         <MetricCard
           label="Completed Services"
@@ -142,7 +143,7 @@ export function DashboardOverview() {
         />
       </section>
 
-      {/* Database Quick Counters */}
+      {/* Metrics Row 2 */}
       <section aria-label="Database entity counts" className="overview-metrics" style={{ marginTop: '1.25rem' }}>
         <MetricCard
           label="Registered Customers"
@@ -167,60 +168,73 @@ export function DashboardOverview() {
         />
       </section>
 
-      {/* Recent Appointments Panel */}
-      <div className="overview-grid" style={{ marginTop: '1.5rem', gridTemplateColumns: '1fr' }}>
-        <section aria-labelledby="recent-appointments-title" className="overview-panel recent-panel">
+      {/* Clean Table Panel for Recent Appointments */}
+      <div className="overview-grid" style={{ marginTop: '1.75rem', gridTemplateColumns: '1fr' }}>
+        <section aria-labelledby="recent-appointments-title" className="overview-panel recent-appointments-panel">
           <div className="overview-panel-header">
             <div>
               <span className="panel-kicker">DATABASE ACTIVITY</span>
               <h2 id="recent-appointments-title">Recent Appointments</h2>
             </div>
+            <Link href="/admin/appointments" className="panel-text-action">
+              View all
+              <Icon name="arrow" />
+            </Link>
           </div>
+          <p className="panel-inline-note">Live appointment records retrieved from MongoDB Atlas</p>
 
           {loading ? (
-            <div style={{ padding: '2rem', textAlign: 'center', color: '#888' }}>
-              Loading live records from MongoDB...
+            <div style={{ padding: '3rem', textAlign: 'center', color: '#888' }}>
+              Loading live records from database...
             </div>
           ) : data.recentAppointments.length === 0 ? (
-            <div
-              style={{
-                padding: '3rem',
-                textAlign: 'center',
-                color: '#888',
-              }}
-            >
-              <p style={{ fontSize: '1rem', marginBottom: '0.5rem', color: '#fff' }}>
-                No appointments in database yet.
-              </p>
-              <p style={{ fontSize: '0.85rem' }}>
-                Bookings submitted on the website will appear here in real-time.
-              </p>
+            <div style={{ padding: '3rem', textAlign: 'center', color: '#888' }}>
+              <p style={{ fontSize: '1rem', marginBottom: '0.5rem', color: '#fff' }}>No appointments in database yet.</p>
+              <p style={{ fontSize: '0.85rem' }}>Customer bookings submitted on the website will appear here automatically.</p>
             </div>
           ) : (
-            <ul className="recent-list">
-              {data.recentAppointments.map((item) => (
-                <li className="recent-item" key={item._id || item.bookingId}>
-                  <div className="recent-item-main">
-                    <strong className="recent-name">{item.customerName}</strong>
-                    <span className="recent-detail">
-                      {item.carModel ? `${item.carModel} · ` : ''}
-                      {item.service}
-                    </span>
-                    <span className="recent-detail" style={{ fontSize: '0.75rem', color: '#777' }}>
-                      ID: {item.bookingId} · Phone: {item.phoneNumber}
-                      {item.preferredDate ? ` · Date: ${item.preferredDate}` : ''}
-                    </span>
-                  </div>
-                  <div className="recent-item-meta">
-                    <span
-                      className={`appointment-status appointment-status--${item.status?.toLowerCase()}`}
-                    >
-                      {item.status}
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <div className="appointments-table-scroll" role="region" aria-label="Recent appointments table" tabIndex={0}>
+              <table className="appointments-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Customer</th>
+                    <th scope="col">Phone</th>
+                    <th scope="col">Vehicle</th>
+                    <th scope="col">Service</th>
+                    <th scope="col">Date &amp; Time</th>
+                    <th scope="col">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.recentAppointments.map((app) => (
+                    <tr key={app._id || app.bookingId}>
+                      <th scope="row">
+                        <span className="customer-avatar" aria-hidden="true">
+                          {(app.customerName || 'U')
+                            .split(' ')
+                            .map((p: string) => p[0])
+                            .join('')
+                            .slice(0, 2)
+                            .toUpperCase()}
+                        </span>
+                        {app.customerName}
+                      </th>
+                      <td>{app.phoneNumber}</td>
+                      <td>{app.carModel || '—'}</td>
+                      <td>{app.service}</td>
+                      <td className="appointment-date-cell">
+                        {app.preferredDate || 'Flexible'} {app.preferredTime ? `· ${app.preferredTime}` : ''}
+                      </td>
+                      <td>
+                        <span className={`appointment-status appointment-status--${(app.status || 'pending').toLowerCase()}`}>
+                          {app.status || 'Pending'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </section>
       </div>
