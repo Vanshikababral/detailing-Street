@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import { Appointment } from '@/models/Appointment';
+import { sendStatusUpdateEmail } from '@/lib/mailer';
 
 export async function GET() {
   try {
@@ -29,7 +30,25 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const { id, bookingId, status, amount } = body;
     const filter = id ? { _id: id } : { bookingId };
-    const appointment = await Appointment.findOneAndUpdate(filter, { status, amount }, { new: true });
+
+    const appointment = await Appointment.findOneAndUpdate(
+      filter,
+      { status, amount },
+      { new: true }
+    );
+
+    if (appointment && status) {
+      // Send notification email to the customer on status changes (e.g., Confirmed, Completed)
+      sendStatusUpdateEmail({
+        bookingId: appointment.bookingId,
+        customerName: appointment.customerName,
+        phoneNumber: appointment.phoneNumber,
+        email: appointment.email,
+        service: appointment.service,
+        status: appointment.status,
+      }).catch((emailErr) => console.error('[Mailer] Status update email error:', emailErr));
+    }
+
     return NextResponse.json({ success: true, appointment });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 400 });

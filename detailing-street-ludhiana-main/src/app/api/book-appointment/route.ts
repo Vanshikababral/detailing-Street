@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import { Appointment } from '@/models/Appointment';
+import { sendAppointmentEmails } from '@/lib/mailer';
 
 // Rate limiting (in-memory)
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -124,6 +125,19 @@ export async function POST(request: NextRequest) {
       preferredTime: typeof preferredTime === 'string' ? sanitize(preferredTime).slice(0, 20) : '',
       message: typeof message === 'string' ? sanitize(message).slice(0, 500) : '',
     });
+
+    // Send asynchronous notifications to customer & studio admin
+    sendAppointmentEmails({
+      bookingId: appointment.bookingId,
+      customerName: appointment.customerName,
+      phoneNumber: appointment.phoneNumber,
+      email: appointment.email,
+      carModel: appointment.carModel,
+      service: appointment.service,
+      preferredDate: appointment.preferredDate,
+      preferredTime: appointment.preferredTime,
+      message: appointment.message,
+    }).catch((emailErr) => console.error('[Mailer] Background email error:', emailErr));
 
     return NextResponse.json({
       success: true,
