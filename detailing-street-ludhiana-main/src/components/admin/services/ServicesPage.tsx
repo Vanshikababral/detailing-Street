@@ -3,30 +3,49 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Icon } from '../dashboard/Icon';
 
+interface ServiceRecord {
+  _id: string;
+  serviceId: string;
+  name: string;
+  category: string;
+  description?: string;
+  price: number;
+  durationMinutes: number;
+  status: 'Active' | 'Inactive';
+}
+
+const emptyForm = {
+  name: '',
+  category: 'Paint Protection',
+  description: '',
+  price: 0,
+  durationMinutes: 60,
+  status: 'Active',
+};
+
 export function ServicesPage() {
-  const [services, setServices] = useState<any[]>([]);
+  const [services, setServices] = useState<ServiceRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    category: 'Paint Protection',
-    description: '',
-    price: 0,
-    durationMinutes: 60,
-    status: 'Active',
-  });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [error, setError] = useState('');
+  const [formData, setFormData] = useState(emptyForm);
 
   const fetchServices = async () => {
     try {
       setLoading(true);
       const res = await fetch('/api/admin/services');
       const data = await res.json();
-      if (data.success) {
-        setServices(data.services || []);
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Could not load services.');
       }
+      setServices(data.services || []);
+      setError('');
     } catch (err) {
       console.error('Error fetching services:', err);
+      setError(err instanceof Error ? err.message : 'Could not load services.');
     } finally {
       setLoading(false);
     }
@@ -36,23 +55,66 @@ export function ServicesPage() {
     fetchServices();
   }, []);
 
-  const handleAddService = async (e: React.FormEvent) => {
+  const handleSaveService = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaving(true);
+    setError('');
+    try {
+      const res = await fetch('/api/admin/services', {
+        method: editingId ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingId ? { ...formData, _id: editingId } : formData),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Could not save this service.');
+      }
+      setShowAddModal(false);
+      setEditingId(null);
+      setFormData(emptyForm);
+      await fetchServices();
+    } catch (err) {
+      console.error('Failed to create service:', err);
+      setError(err instanceof Error ? err.message : 'Could not save this service.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSeedDefaults = async () => {
+    setSaving(true);
+    setError('');
     try {
       const res = await fetch('/api/admin/services', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ seedDefaults: true }),
       });
       const data = await res.json();
-      if (data.success) {
-        setShowAddModal(false);
-        setFormData({ name: '', category: 'Paint Protection', description: '', price: 0, durationMinutes: 60, status: 'Active' });
-        fetchServices();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Could not add the default service catalog.');
       }
+      setServices(data.services || []);
     } catch (err) {
-      console.error('Failed to create service:', err);
+      console.error('Failed to add default services:', err);
+      setError(err instanceof Error ? err.message : 'Could not add the default service catalog.');
+    } finally {
+      setSaving(false);
     }
+  };
+
+  const handleEdit = (service: ServiceRecord) => {
+    setEditingId(service._id);
+    setFormData({
+      name: service.name,
+      category: service.category,
+      description: service.description || '',
+      price: service.price || 0,
+      durationMinutes: service.durationMinutes || 0,
+      status: service.status,
+    });
+    setError('');
+    setShowAddModal(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -62,11 +124,13 @@ export function ServicesPage() {
         method: 'DELETE',
       });
       const data = await res.json();
-      if (data.success) {
-        setServices((prev) => prev.filter((s) => s._id !== id));
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Could not delete this service.');
       }
+      setServices((prev) => prev.filter((s) => s._id !== id));
     } catch (err) {
       console.error('Failed to delete service:', err);
+      setError(err instanceof Error ? err.message : 'Could not delete this service.');
     }
   };
 
@@ -107,6 +171,12 @@ export function ServicesPage() {
         </button>
       </header>
 
+      {error && (
+        <p role="alert" style={{ color: '#fca5a5', marginTop: '1rem' }}>
+          {error}
+        </p>
+      )}
+
       <div style={{ margin: '1.5rem 0' }}>
         <input
           type="text"
@@ -140,11 +210,46 @@ export function ServicesPage() {
           }}
         >
           <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: '#fff' }}>
-            No services configured in database.
+            {services.length === 0 ? 'No services configured in database.' : 'No services match this search.'}
           </p>
           <p style={{ fontSize: '0.85rem' }}>
-            Add your pricing and services using the &quot;+ Add Service&quot; button above.
+            {services.length === 0
+              ? 'Add the starter catalog with prices left unset, or create your own services.'
+              : 'Try another search or clear the current search.'}
           </p>
+          {services.length === 0 ? (
+            <button
+              disabled={saving}
+              onClick={handleSeedDefaults}
+              style={{
+                marginTop: '1rem',
+                background: '#E31C1C',
+                color: '#fff',
+                border: 'none',
+                padding: '0.65rem 1rem',
+                borderRadius: '6px',
+                cursor: saving ? 'wait' : 'pointer',
+                fontWeight: 'bold',
+              }}
+            >
+              {saving ? 'Adding services…' : 'Add default services'}
+            </button>
+          ) : (
+            <button
+              onClick={() => setSearchQuery('')}
+              style={{
+                marginTop: '1rem',
+                background: 'transparent',
+                color: '#fff',
+                border: '1px solid #555',
+                padding: '0.65rem 1rem',
+                borderRadius: '6px',
+                cursor: 'pointer',
+              }}
+            >
+              Clear search
+            </button>
+          )}
         </div>
       ) : (
         <div className="appointments-table-wrap">
@@ -173,8 +278,8 @@ export function ServicesPage() {
                     )}
                   </td>
                   <td>{s.category}</td>
-                  <td>₹{Number(s.price || 0).toLocaleString('en-IN')}</td>
-                  <td>{s.durationMinutes} mins</td>
+                  <td>{Number(s.price || 0) > 0 ? `₹${Number(s.price).toLocaleString('en-IN')}` : 'Not set'}</td>
+                  <td>{Number(s.durationMinutes || 0) > 0 ? `${s.durationMinutes} mins` : 'Not set'}</td>
                   <td>
                     <span
                       style={{
@@ -189,6 +294,19 @@ export function ServicesPage() {
                     </span>
                   </td>
                   <td>
+                    <button
+                      onClick={() => handleEdit(s)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#d1d5db',
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        marginRight: '0.75rem',
+                      }}
+                    >
+                      Edit
+                    </button>
                     <button
                       onClick={() => handleDelete(s._id)}
                       style={{
@@ -231,8 +349,8 @@ export function ServicesPage() {
               width: '100%',
             }}
           >
-            <h2 style={{ marginBottom: '1.2rem', color: '#fff' }}>Add New Service</h2>
-            <form onSubmit={handleAddService} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <h2 style={{ marginBottom: '1.2rem', color: '#fff' }}>{editingId ? 'Edit Service' : 'Add New Service'}</h2>
+            <form onSubmit={handleSaveService} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '0.3rem', fontSize: '0.85rem', color: '#aaa' }}>Service Name *</label>
                 <input
@@ -257,6 +375,7 @@ export function ServicesPage() {
                   <option value="Vinyl Wraps">Vinyl Wraps</option>
                   <option value="Window Tinting">Window Tinting</option>
                   <option value="Accessories">Accessories</option>
+                  <option value="Other">Other / Consultation</option>
                 </select>
               </div>
               <div style={{ display: 'flex', gap: '1rem' }}>
@@ -264,6 +383,7 @@ export function ServicesPage() {
                   <label style={{ display: 'block', marginBottom: '0.3rem', fontSize: '0.85rem', color: '#aaa' }}>Price (₹) *</label>
                   <input
                     type="number"
+                    min={0}
                     required
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
@@ -274,6 +394,7 @@ export function ServicesPage() {
                   <label style={{ display: 'block', marginBottom: '0.3rem', fontSize: '0.85rem', color: '#aaa' }}>Duration (mins)</label>
                   <input
                     type="number"
+                    min={0}
                     value={formData.durationMinutes}
                     onChange={(e) => setFormData({ ...formData, durationMinutes: Number(e.target.value) })}
                     style={{ width: '100%', padding: '0.6rem', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '4px' }}
@@ -291,16 +412,21 @@ export function ServicesPage() {
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.8rem', marginTop: '1rem' }}>
                 <button
                   type="button"
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setEditingId(null);
+                    setFormData(emptyForm);
+                  }}
                   style={{ padding: '0.6rem 1rem', background: 'transparent', border: '1px solid #555', color: '#fff', borderRadius: '4px', cursor: 'pointer' }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
+                  disabled={saving}
                   style={{ padding: '0.6rem 1.2rem', background: '#E31C1C', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
                 >
-                  Save
+                  {saving ? 'Saving…' : 'Save'}
                 </button>
               </div>
             </form>

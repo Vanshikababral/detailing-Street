@@ -5,6 +5,10 @@ export interface ICustomer extends Document {
   name: string;
   phone: string;
   email: string;
+  state?: string;
+  address?: string;
+  city?: string;
+  zipCode?: string;
   notes?: string;
   totalVisits: number;
   totalSpent: number;
@@ -24,6 +28,10 @@ const CustomerSchema = new Schema<ICustomer>(
     name: { type: String, required: true, trim: true },
     phone: { type: String, required: true, trim: true },
     email: { type: String, trim: true, default: '' },
+    state: { type: String, trim: true, default: '' },
+    address: { type: String, trim: true, default: '' },
+    city: { type: String, trim: true, default: '' },
+    zipCode: { type: String, trim: true, default: '' },
     notes: { type: String, default: '' },
     totalVisits: { type: Number, default: 0 },
     totalSpent: { type: Number, default: 0 },
@@ -39,4 +47,3 @@ const CustomerSchema = new Schema<ICustomer>(
 
 export const Customer: Model<ICustomer> =
   mongoose.models.Customer || mongoose.model<ICustomer>('Customer', CustomerSchema);
-

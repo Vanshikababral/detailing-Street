@@ -23,7 +23,7 @@ export async function PATCH(request: NextRequest) {
     });
     const data = await res.json();
 
-    if (data.success && data.appointment) {
+    if (data.success && data.appointment && body.status) {
       sendStatusUpdateEmail({
         bookingId: data.appointment.bookingId,
         customerName: data.appointment.customerName,

@@ -24,8 +24,10 @@ def get_mongo_client() -> MongoClient:
 
 def get_db() -> Database:
     client = get_mongo_client()
-    # Explicitly use 'test' to match where collections were created in Compass
-    return client['test']
+    database_name = os.environ.get('MONGODB_DATABASE', 'test').strip()
+    if not database_name:
+        raise ValueError('MONGODB_DATABASE must not be empty.')
+    return client[database_name]
 
 def get_collection(name: str) -> Collection:
     db = get_db()

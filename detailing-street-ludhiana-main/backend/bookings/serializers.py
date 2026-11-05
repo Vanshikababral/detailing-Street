@@ -4,8 +4,6 @@ from datetime import date
 from django.utils import timezone
 from rest_framework import serializers
 
-from .models import Appointment
-
 
 SERVICES = (
     'Paint Protection Film (PPF)',
@@ -33,25 +31,41 @@ class EmptyStringAsNullTimeField(serializers.TimeField):
         return super().to_internal_value(value)
 
 
-class AppointmentCreateSerializer(serializers.ModelSerializer):
-    customerName = serializers.CharField(source='customer_name', max_length=100)
-    phoneNumber = serializers.CharField(source='phone', max_length=20)
+class AppointmentCreateSerializer(serializers.Serializer):
+    customerName = serializers.CharField(min_length=2, max_length=100)
+    phoneNumber = serializers.CharField(max_length=20)
     email = serializers.EmailField(required=False, allow_blank=True, max_length=254)
     carModel = serializers.CharField(
-        source='car_model',
         required=False,
         allow_blank=True,
         max_length=100,
     )
-    service = serializers.ChoiceField(choices=SERVICES)
+    vehicleRegistration = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        max_length=20,
+    )
+    vehicleMake = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        max_length=80,
+    )
+    vehicleModel = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        max_length=100,
+    )
+    state = serializers.CharField(required=False, allow_blank=True, max_length=100)
+    address = serializers.CharField(required=False, allow_blank=True, max_length=300)
+    city = serializers.CharField(required=False, allow_blank=True, max_length=100)
+    zipCode = serializers.CharField(required=False, allow_blank=True, max_length=20)
+    service = serializers.CharField(min_length=2, max_length=120)
     preferredDate = EmptyStringAsNullDateField(
-        source='preferred_date',
         required=False,
         allow_null=True,
         input_formats=['%Y-%m-%d'],
     )
     preferredTime = EmptyStringAsNullTimeField(
-        source='preferred_time',
         required=False,
         allow_null=True,
         input_formats=['%I:%M %p', '%H:%M', '%H:%M:%S'],
@@ -61,19 +75,6 @@ class AppointmentCreateSerializer(serializers.ModelSerializer):
         allow_blank=True,
         max_length=2000,
     )
-
-    class Meta:
-        model = Appointment
-        fields = (
-            'customerName',
-            'phoneNumber',
-            'email',
-            'carModel',
-            'service',
-            'preferredDate',
-            'preferredTime',
-            'message',
-        )
 
     def to_internal_value(self, data):
         if hasattr(data, 'keys'):
@@ -93,6 +94,13 @@ class AppointmentCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Enter at least 2 characters.')
         return value
 
+    def validate_service(self, value):
+        value = value.strip()
+        active_service_names = self.context.get('active_service_names', set())
+        if value not in SERVICES and value not in active_service_names:
+            raise serializers.ValidationError('Select an active service from the catalog.')
+        return value
+
     def validate_phoneNumber(self, value):
         phone = re.sub(r'\s+', '', value)
         if not re.fullmatch(r'[6-9]\d{9}', phone):
@@ -106,21 +114,13 @@ class AppointmentCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Choose today or a future date.')
         return value
 
-
-class AppointmentReadSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Appointment
-        fields = (
-            'id',
-            'booking_id',
-            'customer_name',
-            'phone',
-            'email',
-            'car_model',
-            'service',
-            'preferred_date',
-            'preferred_time',
-            'message',
-            'status',
-            'created_at',
-        )
+    def validate(self, attrs):
+        registration = attrs.get('vehicleRegistration', '').strip()
+        if registration and not (
+            attrs.get('vehicleMake', '').strip()
+            and attrs.get('vehicleModel', '').strip()
+        ):
+            raise serializers.ValidationError({
+                'vehicleRegistration': 'Enter the vehicle make and model when providing a registration.'
+            })
+        return attrs

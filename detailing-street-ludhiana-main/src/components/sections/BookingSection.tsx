@@ -1,20 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import toast from 'react-hot-toast';
+import { DEFAULT_SERVICES } from '@/lib/serviceCatalog';
 
-const services = [
-  'Paint Protection Film (PPF)',
-  'Ceramic Coating',
-  'Premium Washing',
-  'Car Accessories',
-  'Coloured Wrap',
-  'Borophene Coating',
-  'Tinting Film',
-  'Other / Consultation',
-];
+const fallbackServices = DEFAULT_SERVICES.map((service) => service.name);
 
 const timeSlots = [
   '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
@@ -26,7 +18,9 @@ interface FormState {
   customerName: string;
   phoneNumber: string;
   email: string;
-  carModel: string;
+  vehicleRegistration: string;
+  vehicleMake: string;
+  vehicleModel: string;
   service: string;
   preferredDate: string;
   preferredTime: string;
@@ -37,7 +31,9 @@ const initialForm: FormState = {
   customerName: '',
   phoneNumber: '',
   email: '',
-  carModel: '',
+  vehicleRegistration: '',
+  vehicleMake: '',
+  vehicleModel: '',
   service: '',
   preferredDate: '',
   preferredTime: '',
@@ -98,7 +94,32 @@ function DarkSelect({
 export default function BookingSection() {
   const [form, setForm] = useState<FormState>(initialForm);
   const [loading, setLoading] = useState(false);
+  const [services, setServices] = useState<string[]>(fallbackServices);
+  const [catalogWarning, setCatalogWarning] = useState('');
   const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.1 });
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/services', { cache: 'no-store' })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || 'Could not load services.');
+        }
+        const names = (data.services || [])
+          .map((service: { name?: string }) => service.name)
+          .filter((name: unknown): name is string => typeof name === 'string' && name.length > 0);
+        if (active && names.length > 0) setServices(names);
+      })
+      .catch((error: unknown) => {
+        console.error('Failed to load the public service catalog:', error);
+        if (active) setCatalogWarning('Showing standard services because the catalog could not be loaded.');
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -121,6 +142,10 @@ export default function BookingSection() {
       toast.error('Please select a service.');
       return;
     }
+    if (form.vehicleRegistration.trim() && (!form.vehicleMake.trim() || !form.vehicleModel.trim())) {
+      toast.error('Enter the vehicle make and model when providing a registration.');
+      return;
+    }
 
     setLoading(true);
 
@@ -128,7 +153,10 @@ export default function BookingSection() {
       const response = await fetch('/api/book-appointment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          carModel: [form.vehicleMake, form.vehicleModel].filter(Boolean).join(' '),
+        }),
       });
 
       const data = await response.json();
@@ -268,14 +296,51 @@ export default function BookingSection() {
                 className="block text-white/60 text-xs uppercase tracking-widest mb-2"
                 style={{ fontFamily: 'Rajdhani, sans-serif' }}
               >
-                Car Model
+                Vehicle Make
               </label>
               <input
                 type="text"
-                name="carModel"
-                value={form.carModel}
+                name="vehicleMake"
+                value={form.vehicleMake}
                 onChange={handleChange}
-                placeholder="e.g. Hyundai Creta 2023"
+                placeholder="e.g. Hyundai"
+                style={inputStyle}
+                className="w-full px-4 py-3 rounded-lg text-sm outline-none transition-all duration-300 placeholder:text-white/20 focus:border-red-600 focus:shadow-[0_0_0_3px_rgba(227,28,28,0.1)]"
+              />
+            </div>
+
+            <div>
+              <label
+                className="block text-white/60 text-xs uppercase tracking-widest mb-2"
+                style={{ fontFamily: 'Rajdhani, sans-serif' }}
+              >
+                Vehicle Model
+              </label>
+              <input
+                type="text"
+                name="vehicleModel"
+                value={form.vehicleModel}
+                onChange={handleChange}
+                placeholder="e.g. Creta 2023"
+                style={inputStyle}
+                className="w-full px-4 py-3 rounded-lg text-sm outline-none transition-all duration-300 placeholder:text-white/20 focus:border-red-600 focus:shadow-[0_0_0_3px_rgba(227,28,28,0.1)]"
+              />
+            </div>
+
+            <div>
+              <label
+                className="block text-white/60 text-xs uppercase tracking-widest mb-2"
+                style={{ fontFamily: 'Rajdhani, sans-serif' }}
+              >
+                Vehicle Registration
+              </label>
+              <input
+                type="text"
+                name="vehicleRegistration"
+                value={form.vehicleRegistration}
+                onChange={handleChange}
+                placeholder="e.g. PB10AB1234"
+                maxLength={20}
                 style={inputStyle}
                 className="w-full px-4 py-3 rounded-lg text-sm outline-none transition-all duration-300 placeholder:text-white/20 focus:border-red-600 focus:shadow-[0_0_0_3px_rgba(227,28,28,0.1)]"
               />
@@ -295,6 +360,7 @@ export default function BookingSection() {
                 options={services}
                 placeholder="Select a service"
               />
+              {catalogWarning && <p className="mt-2 text-xs text-white/45">{catalogWarning}</p>}
             </div>
 
             <div>

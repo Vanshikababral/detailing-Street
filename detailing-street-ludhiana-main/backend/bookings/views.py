@@ -2,6 +2,7 @@ import datetime
 import secrets
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -9,10 +10,12 @@ from rest_framework.views import APIView
 from bson import ObjectId
 
 from .mongo import get_collection
+from .serializers import AppointmentCreateSerializer, SERVICES
+from .sync import sync_customer, sync_vehicle
 
 def generate_booking_id() -> str:
-    today_str = datetime.date.today().strftime('%Y%m%d')
-    rand_hex = secrets.token_hex(3).upper()
+    today_str = timezone.localdate().strftime('%Y%m%d')
+    rand_hex = secrets.token_hex(6).upper()
     return f'DS-{today_str}-{rand_hex}'
 
 def serialize_mongo_doc(doc: dict) -> dict:
@@ -25,37 +28,55 @@ class AppointmentCreateView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
-        data = request.data
-        customer_name = (data.get('customerName') or '').strip()
-        phone_number = (data.get('phoneNumber') or '').strip()
-        service = (data.get('service') or '').strip()
+        requested_service = request.data.get('service')
+        active_service_names = set()
+        if isinstance(requested_service, str) and requested_service.strip() not in SERVICES:
+            active_service_names = set(
+                get_collection('services').distinct('name', {'status': 'Active'})
+            )
 
-        if not customer_name:
-            return Response({'success': False, 'error': 'Customer name is required.'}, status=status.HTTP_400_BAD_REQUEST)
-        if not phone_number:
-            return Response({'success': False, 'error': 'Phone number is required.'}, status=status.HTTP_400_BAD_REQUEST)
-        if not service:
-            return Response({'success': False, 'error': 'Service is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = AppointmentCreateSerializer(
+            data=request.data,
+            context={'active_service_names': active_service_names},
+        )
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
 
         booking_id = generate_booking_id()
-        now = datetime.datetime.now(datetime.timezone.utc)
+        now = timezone.now()
+        preferred_date = data.get('preferredDate')
+        preferred_time = data.get('preferredTime')
 
         doc = {
             'bookingId': booking_id,
-            'customerName': customer_name,
-            'phoneNumber': phone_number,
-            'email': (data.get('email') or '').strip(),
-            'carModel': (data.get('carModel') or '').strip(),
-            'service': service,
-            'preferredDate': (data.get('preferredDate') or '').strip(),
-            'preferredTime': (data.get('preferredTime') or '').strip(),
-            'message': (data.get('message') or '').strip(),
-            'amount': float(data.get('amount') or 0),
+            'customerName': data['customerName'],
+            'phoneNumber': data['phoneNumber'],
+            'email': data.get('email', ''),
+            'carModel': ' '.join(
+                value for value in (
+                    data.get('vehicleMake', '').strip(),
+                    data.get('vehicleModel', '').strip(),
+                ) if value
+            ) or data.get('carModel', ''),
+            'vehicleRegistration': data.get('vehicleRegistration', '').strip().upper(),
+            'vehicleMake': data.get('vehicleMake', '').strip(),
+            'vehicleModel': data.get('vehicleModel', '').strip(),
+            'service': data['service'],
+            'preferredDate': preferred_date.isoformat() if preferred_date else '',
+            'preferredTime': preferred_time.strftime('%I:%M %p') if preferred_time else '',
+            'message': data.get('message', ''),
+            'state': data.get('state', ''),
+            'address': data.get('address', ''),
+            'city': data.get('city', ''),
+            'zipCode': data.get('zipCode', ''),
+            'amount': 0,
             'status': 'Pending',
             'createdAt': now,
             'updatedAt': now,
         }
 
+        customer_id = sync_customer(data, get_collection('customers'), now)
+        sync_vehicle(data, get_collection('vehicles'), customer_id, now)
         coll = get_collection('appointments')
         result = coll.insert_one(doc)
         doc['_id'] = str(result.inserted_id)
