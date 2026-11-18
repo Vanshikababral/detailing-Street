@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 
 const services = [
@@ -12,6 +15,18 @@ const services = [
 
 export default function Footer() {
   const year = new Date().getFullYear();
+  const [workingHours, setWorkingHours] = useState('Monday – Sunday: 9:00 AM – 8:00 PM');
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.settings?.workingHours) {
+          setWorkingHours(data.settings.workingHours);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <footer className="bg-[#060606] border-t border-white/5">
@@ -117,6 +132,12 @@ export default function Footer() {
                   504-R Model Town<br />
                   Opp. Krishna Hospital<br />
                   <span className="text-white/40">Also at: Near Suffian Chowk</span>
+                </p>
+              </div>
+              <div>
+                <p className="text-white/30 text-xs uppercase tracking-widest mb-1">Working Hours</p>
+                <p className="text-white/60 text-sm leading-relaxed">
+                  {workingHours}
                 </p>
               </div>
             </div>

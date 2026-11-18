@@ -27,6 +27,10 @@ yarn-error.log*
 .env
 .env*.local
 .env.local
+
+# Ignore script helper files
+scripts/
+admin-dashboard/
 .env.development.local
 .env.test.local
 .env.production.local

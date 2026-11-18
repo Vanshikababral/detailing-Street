@@ -31,7 +31,8 @@ export type IconName =
   | 'trash'
   | 'mail'
   | 'car'
-  | 'calendar';
+  | 'calendar'
+  | 'logout';
 
 const paths: Record<IconName, ReactNode> = {
   dashboard: (
@@ -185,6 +186,13 @@ const paths: Record<IconName, ReactNode> = {
     <>
       <rect x="3" y="5" width="18" height="16" rx="2" />
       <path d="M7 3v4M17 3v4M3 10h18" />
+    </>
+  ),
+  logout: (
+    <>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
     </>
   ),
 };

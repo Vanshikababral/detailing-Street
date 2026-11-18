@@ -33,6 +33,8 @@ export function Topbar() {
   const [notificationsError, setNotificationsError] = useState<string | null>(null);
   const [notificationsLoaded, setNotificationsLoaded] = useState(false);
   const [notificationRefreshKey, setNotificationRefreshKey] = useState(0);
+  const [adminUser, setAdminUser] = useState<{ email: string; role: string } | null>(null);
+  const [loggingOut, setLoggingOut] = useState(false);
   const topbarRef = useRef<HTMLDivElement>(null);
   const triggerRefs = useRef<Record<MenuName, HTMLButtonElement | null>>({
     business: null,
@@ -61,6 +63,27 @@ export function Topbar() {
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [openMenu]);
+
+  useEffect(() => {
+    fetch('/api/admin/auth/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.authenticated && data.user) {
+          setAdminUser(data.user);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      setLoggingOut(true);
+      await fetch('/api/admin/auth/logout', { method: 'POST' });
+      window.location.href = '/admin/login';
+    } catch {
+      window.location.href = '/admin/login';
+    }
+  };
 
   useEffect(() => {
     if (openMenu !== 'notifications' && notificationsLoaded) return;
@@ -248,9 +271,23 @@ export function Topbar() {
           </button>
           {openMenu === 'profile' && (
             <div aria-label="Profile" className="dropdown-panel profile-panel" role="group">
-              <span className="dropdown-current">Admin</span>
-              <span className="dropdown-role">Owner</span>
-              <p>Profile controls are not connected yet.</p>
+              <div className="profile-panel-header">
+                <span className="dropdown-current" title={adminUser?.email || 'Admin'}>
+                  {adminUser?.email || 'Admin'}
+                </span>
+                <span className="dropdown-role">{adminUser?.role || 'Owner'}</span>
+              </div>
+              <p className="profile-panel-hint">Studio Administrator Access</p>
+              <div className="profile-panel-divider" />
+              <button
+                type="button"
+                className="profile-logout-button"
+                onClick={handleLogout}
+                disabled={loggingOut}
+              >
+                <Icon name="logout" className="logout-icon" />
+                <span>{loggingOut ? 'Signing out...' : 'Sign Out'}</span>
+              </button>
             </div>
           )}
         </div>

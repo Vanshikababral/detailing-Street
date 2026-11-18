@@ -12,7 +12,6 @@ const navigation: { label: string; icon: IconName; href: string }[] = [
   { label: 'Vehicles', icon: 'vehicles', href: '/admin/vehicles' },
   { label: 'Services', icon: 'services', href: '/admin/services' },
   { label: 'Staff', icon: 'staff', href: '/admin/staff' },
-  { label: 'Reports', icon: 'reports', href: '/admin/reports' },
   { label: 'Settings', icon: 'settings', href: '/admin/settings' },
 ];
 

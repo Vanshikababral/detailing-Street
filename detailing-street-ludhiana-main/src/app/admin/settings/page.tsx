@@ -1,14 +1,11 @@
 import { DashboardShell } from '@/components/admin/dashboard/DashboardShell';
-import { SectionPlaceholder } from '@/components/admin/dashboard/SectionPlaceholder';
+import { SettingsPage } from '@/components/admin/settings/SettingsPage';
 
-export default function SettingsPage() {
+export default function Settings() {
   return (
     <DashboardShell>
-      <SectionPlaceholder
-        description="Configure your workspace preferences and business details."
-        icon="settings"
-        title="Settings"
-      />
+      <SettingsPage />
     </DashboardShell>
   );
 }
+
