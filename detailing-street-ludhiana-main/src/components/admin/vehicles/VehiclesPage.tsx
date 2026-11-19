@@ -84,66 +84,39 @@ export function VehiclesPage() {
 
   return (
     <div className="vehicles-management">
-      <header className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header className="dashboard-header customers-header">
         <div>
-          <span className="dashboard-kicker">DATABASE</span>
+          <span className="dashboard-kicker">Database</span>
           <h1 className="dashboard-title">Vehicles</h1>
           <p className="dashboard-subtitle">
             Live vehicle records stored in MongoDB Atlas.
           </p>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          style={{
-            background: '#E31C1C',
-            color: '#fff',
-            border: 'none',
-            padding: '0.6rem 1.2rem',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontWeight: 'bold',
-          }}
-        >
+        <button className="admin-primary-button" onClick={() => setShowAddModal(true)}>
           + Add Vehicle
         </button>
       </header>
 
-      <div style={{ margin: '1.5rem 0' }}>
+      <div className="admin-search-row">
         <input
+          className="admin-search-input"
           type="text"
           placeholder="Search by registration number, make, model, owner..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          style={{
-            background: '#141414',
-            border: '1px solid #2a2a2a',
-            padding: '0.6rem 1rem',
-            color: '#fff',
-            borderRadius: '6px',
-            minWidth: '280px',
-          }}
         />
       </div>
 
       {loading ? (
-        <div style={{ padding: '3rem', textAlign: 'center', color: '#888' }}>
+        <div aria-live="polite" className="admin-state admin-state--loading">
           Loading vehicles from MongoDB...
         </div>
       ) : filtered.length === 0 ? (
-        <div
-          style={{
-            padding: '3rem',
-            textAlign: 'center',
-            background: '#141414',
-            borderRadius: '8px',
-            border: '1px dashed #333',
-            color: '#888',
-          }}
-        >
-          <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: '#fff' }}>
+        <div className="admin-state admin-state--empty">
+          <p className="admin-state-title">
             No vehicles registered yet.
           </p>
-          <p style={{ fontSize: '0.85rem' }}>
+          <p className="admin-state-description">
             Add vehicles using the &quot;+ Add Vehicle&quot; button above.
           </p>
         </div>
@@ -173,16 +146,7 @@ export function VehiclesPage() {
                   <td>{v.ownerName}</td>
                   <td>{v.serviceCount || 0}</td>
                   <td>
-                    <button
-                      onClick={() => handleDelete(v._id)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#ef4444',
-                        cursor: 'pointer',
-                        fontSize: '0.85rem',
-                      }}
-                    >
+                    <button className="admin-table-action" onClick={() => handleDelete(v._id)}>
                       Delete
                     </button>
                   </td>
@@ -194,70 +158,51 @@ export function VehiclesPage() {
       )}
 
       {showAddModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.8)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-          }}
-        >
-          <div
-            style={{
-              background: '#141414',
-              padding: '2rem',
-              borderRadius: '8px',
-              border: '1px solid #333',
-              maxWidth: '450px',
-              width: '100%',
-            }}
-          >
-            <h2 style={{ marginBottom: '1.2rem', color: '#fff' }}>Add New Vehicle</h2>
-            <form onSubmit={handleAddVehicle} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.3rem', fontSize: '0.85rem', color: '#aaa' }}>Registration Number *</label>
+        <div className="admin-modal-backdrop">
+          <div className="admin-modal">
+            <h2 className="admin-modal-title">Add New Vehicle</h2>
+            <form className="admin-form" onSubmit={handleAddVehicle}>
+              <div className="admin-form-field">
+                <label>Registration Number *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. PB10AB1234"
                   value={formData.registration}
                   onChange={(e) => setFormData({ ...formData, registration: e.target.value })}
-                  style={{ width: '100%', padding: '0.6rem', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '4px' }}
+                  className="admin-form-control"
                 />
               </div>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', marginBottom: '0.3rem', fontSize: '0.85rem', color: '#aaa' }}>Make *</label>
+              <div className="admin-form-row">
+                <div className="admin-form-field">
+                  <label>Make *</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. BMW"
                     value={formData.make}
                     onChange={(e) => setFormData({ ...formData, make: e.target.value })}
-                    style={{ width: '100%', padding: '0.6rem', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '4px' }}
+                    className="admin-form-control"
                   />
                 </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', marginBottom: '0.3rem', fontSize: '0.85rem', color: '#aaa' }}>Model *</label>
+                <div className="admin-form-field">
+                  <label>Model *</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. 3 Series"
                     value={formData.model}
                     onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-                    style={{ width: '100%', padding: '0.6rem', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '4px' }}
+                    className="admin-form-control"
                   />
                 </div>
               </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.3rem', fontSize: '0.85rem', color: '#aaa' }}>Vehicle Type</label>
+              <div className="admin-form-field">
+                <label>Vehicle Type</label>
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  style={{ width: '100%', padding: '0.6rem', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '4px' }}
+                  className="admin-form-control"
                 >
                   <option value="Sedan">Sedan</option>
                   <option value="SUV">SUV</option>
@@ -267,27 +212,27 @@ export function VehiclesPage() {
                   <option value="Other">Other</option>
                 </select>
               </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.3rem', fontSize: '0.85rem', color: '#aaa' }}>Owner Name *</label>
+              <div className="admin-form-field">
+                <label>Owner Name *</label>
                 <input
                   type="text"
                   required
                   value={formData.ownerName}
                   onChange={(e) => setFormData({ ...formData, ownerName: e.target.value })}
-                  style={{ width: '100%', padding: '0.6rem', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '4px' }}
+                  className="admin-form-control"
                 />
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.8rem', marginTop: '1rem' }}>
+              <div className="admin-form-actions">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  style={{ padding: '0.6rem 1rem', background: 'transparent', border: '1px solid #555', color: '#fff', borderRadius: '4px', cursor: 'pointer' }}
+                  className="admin-secondary-button"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  style={{ padding: '0.6rem 1.2rem', background: '#E31C1C', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                  className="admin-primary-button"
                 >
                   Save
                 </button>

@@ -1,6 +1,6 @@
 # Detailing Street Django API
 
-Django serves the API used by the Next.js website. PyMongo reads and writes every business record in MongoDB: appointments, customers, vehicles, and services. The backend has no Django ORM models, SQLite database, migrations, or built-in Django Admin.
+Django serves the booking, appointment, dashboard, and staff APIs used by the Next.js website. It accesses MongoDB through PyMongo. The backend has no Django ORM models, SQLite database, migrations, or built-in Django Admin.
 
 The Django database setting uses Django's dummy backend. It intentionally rejects ORM database access so application data cannot silently fall back to SQLite.
 
@@ -31,6 +31,10 @@ Check the API at <http://127.0.0.1:8000/api/health/>.
 - `POST /api/book-appointment/` — validates a booking, upserts its customer by phone number, and stores the appointment. A vehicle is added or updated only when registration, make, and model are all provided.
 - `GET`, `PATCH`, and `DELETE /api/appointments/` — appointment operations backed by MongoDB.
 - `GET /api/dashboard/` — business metrics read from MongoDB collections.
+- `GET`, `POST /api/staff/` — search/filter/paginate staff records and create a staff record.
+- `PUT`, `PATCH`, and `DELETE /api/staff/<staff_id>/` — edit, activate/deactivate, and delete staff records.
+
+Staff endpoints require the `admin_session` cookie created by Next.js login. Set the same `ADMIN_SESSION_SECRET` and admin email configuration for Next.js and Django. In the browser, the dashboard calls the same-origin Next.js `/api/admin/staff` proxy, which forwards the cookie to Django.
 
 The working Next.js dashboard at <http://localhost:3000/admin> uses the MongoDB-backed API. Services are a separate catalog; add the starter entries from the Services page and set their prices there. Reports is currently a placeholder, not a live report.
 

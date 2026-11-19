@@ -32,7 +32,9 @@ export type IconName =
   | 'mail'
   | 'car'
   | 'calendar'
-  | 'logout';
+  | 'logout'
+  | 'fullscreen'
+  | 'fullscreenExit';
 
 const paths: Record<IconName, ReactNode> = {
   dashboard: (
@@ -193,6 +195,16 @@ const paths: Record<IconName, ReactNode> = {
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
       <polyline points="16 17 21 12 16 7" />
       <line x1="21" y1="12" x2="9" y2="12" />
+    </>
+  ),
+  fullscreen: (
+    <>
+      <path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3" />
+    </>
+  ),
+  fullscreenExit: (
+    <>
+      <path d="M8 3v5H3M21 8h-5V3M3 16h5v5M16 21v-5h5" />
     </>
   ),
 };

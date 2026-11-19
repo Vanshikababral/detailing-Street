@@ -9,6 +9,17 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        studio: {
+          bg: 'var(--bg)',
+          card: 'var(--card)',
+          raised: 'var(--raised)',
+          border: 'var(--border)',
+          text: 'var(--text)',
+          muted: 'var(--muted)',
+          red: 'var(--red)',
+          'red-deep': 'var(--red-deep)',
+          chrome: 'var(--chrome)',
+        },
         brand: {
           red: '#E31C1C',
           'red-dark': '#B01515',
@@ -24,6 +35,8 @@ const config: Config = {
         },
       },
       fontFamily: {
+        rajdhani: ['var(--font-rajdhani)', 'sans-serif'],
+        orbitron: ['var(--font-orbitron)', 'sans-serif'],
         heading: ['var(--font-heading)', 'sans-serif'],
         body: ['var(--font-body)', 'sans-serif'],
         mono: ['var(--font-mono)', 'monospace'],

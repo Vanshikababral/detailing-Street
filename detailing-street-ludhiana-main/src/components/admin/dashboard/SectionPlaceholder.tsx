@@ -15,7 +15,7 @@ export function SectionPlaceholder({
       <span className="section-placeholder-icon">
         <Icon name={icon} />
       </span>
-      <span className="section-placeholder-eyebrow">WORKSPACE</span>
+      <span className="section-placeholder-eyebrow">Workspace</span>
       <h1 id="section-placeholder-title">{title}</h1>
       <p>{description}</p>
       <span className="section-placeholder-status">This section is not configured yet.</span>

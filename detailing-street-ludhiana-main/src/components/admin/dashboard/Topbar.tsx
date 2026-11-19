@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 import { Icon } from './Icon';
 
 type MenuName = 'business' | 'notifications' | 'profile';
@@ -35,6 +36,7 @@ export function Topbar() {
   const [notificationRefreshKey, setNotificationRefreshKey] = useState(0);
   const [adminUser, setAdminUser] = useState<{ email: string; role: string } | null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const topbarRef = useRef<HTMLDivElement>(null);
   const triggerRefs = useRef<Record<MenuName, HTMLButtonElement | null>>({
     business: null,
@@ -63,6 +65,15 @@ export function Topbar() {
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [openMenu]);
+
+  useEffect(() => {
+    function syncFullscreenState() {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    }
+
+    document.addEventListener('fullscreenchange', syncFullscreenState);
+    return () => document.removeEventListener('fullscreenchange', syncFullscreenState);
+  }, []);
 
   useEffect(() => {
     fetch('/api/admin/auth/me')
@@ -128,6 +139,24 @@ export function Topbar() {
     setOpenMenu((currentMenu) => (currentMenu === menu ? null : menu));
   }
 
+  async function toggleFullscreen() {
+    if (!document.fullscreenElement && !document.fullscreenEnabled) {
+      toast.error('Full screen is not available in this browser.');
+      return;
+    }
+
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await document.documentElement.requestFullscreen();
+      }
+    } catch (error) {
+      console.error('Could not change dashboard full-screen mode:', error);
+      toast.error('Could not change full-screen mode. Please try again.');
+    }
+  }
+
   return (
     <header className="topbar">
       <label className="global-search">
@@ -140,6 +169,17 @@ export function Topbar() {
           View website
           <Icon name="arrow" />
         </Link>
+        <button
+          aria-label={isFullscreen ? 'Exit full screen' : 'Enter full screen'}
+          aria-pressed={isFullscreen}
+          className="fullscreen-toggle"
+          onClick={toggleFullscreen}
+          title={isFullscreen ? 'Exit full screen' : 'Enter full screen'}
+          type="button"
+        >
+          <Icon name={isFullscreen ? 'fullscreenExit' : 'fullscreen'} />
+          <span>{isFullscreen ? 'Exit full screen' : 'Full screen'}</span>
+        </button>
         <div className="topbar-menu">
           <button
             aria-expanded={openMenu === 'business'}
@@ -159,7 +199,7 @@ export function Topbar() {
           </button>
           {openMenu === 'business' && (
             <div aria-label="Business selector" className="dropdown-panel business-panel" role="group">
-              <span className="dropdown-eyebrow">CURRENT BUSINESS</span>
+              <span className="dropdown-eyebrow">Current business</span>
               <span className="dropdown-current">
                 <span aria-hidden="true" className="dropdown-check">✓</span>
                 Detailing Street Ludhiana

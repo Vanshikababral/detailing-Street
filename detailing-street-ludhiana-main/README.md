@@ -1,6 +1,6 @@
 # Detailing Street Ludhiana
 
-The project has one customer-facing website and one working admin dashboard. Booking, appointment, customer, vehicle, and service records are stored in MongoDB. The Next.js app proxies booking requests to the Django API; Django uses PyMongo for business data.
+The project has one customer-facing website and one working admin dashboard. Booking and appointment workflows use the Django API, which accesses MongoDB through PyMongo. The Next.js app also contains authenticated proxy routes for dashboard management features.
 
 ## Requirements
 
@@ -42,6 +42,7 @@ Create a local `.env.local` from `.env.example` and fill in your own values. Do 
 - `MONGODB_URI` — MongoDB connection string.
 - `MONGODB_DATABASE` — optional database name; defaults to `test` for compatibility with the current data.
 - `DJANGO_API_BASE_URL` — optional Django API URL; defaults to `http://127.0.0.1:8000`.
+- `ADMIN_SESSION_SECRET` — set the same strong secret for Next.js and Django so Django can verify admin sessions on staff-management requests.
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `ADMIN_NOTIFICATION_EMAIL` — optional email notification settings.
 
 Bookings are stored even when SMTP is not configured; email notifications require valid SMTP credentials.
@@ -56,6 +57,10 @@ The backend tests mock the MongoDB collection calls, so they do not need a Mongo
 cd .\backend
 .\.venv\Scripts\python.exe manage.py test bookings.tests
 ```
+
+## Staff directory
+
+The admin Staff page stores team profiles in the MongoDB `staff` collection through Django and PyMongo. The Next.js `/api/admin/staff` route is a same-origin proxy to Django's `/api/staff/` endpoints and forwards the admin session for backend verification. Staff records include name, normalized unique phone number, optional email and specialization, role, joining date, active status, notes, and timestamps. Both the Next.js app and Django API must be running to use the Staff page.
 
 ## Build
 

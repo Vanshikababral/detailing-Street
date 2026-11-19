@@ -147,105 +147,61 @@ export function ServicesPage() {
 
   return (
     <div className="services-management">
-      <header className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header className="dashboard-header customers-header">
         <div>
-          <span className="dashboard-kicker">DATABASE</span>
+          <span className="dashboard-kicker">Database</span>
           <h1 className="dashboard-title">Services</h1>
           <p className="dashboard-subtitle">
             Live catalog of services configured in MongoDB Atlas.
           </p>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          style={{
-            background: '#E31C1C',
-            color: '#fff',
-            border: 'none',
-            padding: '0.6rem 1.2rem',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontWeight: 'bold',
-          }}
-        >
+        <button className="admin-primary-button" onClick={() => setShowAddModal(true)}>
           + Add Service
         </button>
       </header>
 
       {error && (
-        <p role="alert" style={{ color: '#fca5a5', marginTop: '1rem' }}>
+        <p className="admin-inline-error" role="alert">
           {error}
         </p>
       )}
 
-      <div style={{ margin: '1.5rem 0' }}>
+      <div className="admin-search-row">
         <input
+          className="admin-search-input"
           type="text"
           placeholder="Search services by name, category, ID..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          style={{
-            background: '#141414',
-            border: '1px solid #2a2a2a',
-            padding: '0.6rem 1rem',
-            color: '#fff',
-            borderRadius: '6px',
-            minWidth: '280px',
-          }}
         />
       </div>
 
       {loading ? (
-        <div style={{ padding: '3rem', textAlign: 'center', color: '#888' }}>
+        <div aria-live="polite" className="admin-state admin-state--loading">
           Loading services from MongoDB...
         </div>
       ) : filtered.length === 0 ? (
-        <div
-          style={{
-            padding: '3rem',
-            textAlign: 'center',
-            background: '#141414',
-            borderRadius: '8px',
-            border: '1px dashed #333',
-            color: '#888',
-          }}
-        >
-          <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: '#fff' }}>
+        <div className="admin-state admin-state--empty">
+          <p className="admin-state-title">
             {services.length === 0 ? 'No services configured in database.' : 'No services match this search.'}
           </p>
-          <p style={{ fontSize: '0.85rem' }}>
+          <p className="admin-state-description">
             {services.length === 0
               ? 'Add the starter catalog with prices left unset, or create your own services.'
               : 'Try another search or clear the current search.'}
           </p>
           {services.length === 0 ? (
             <button
+              className="admin-primary-button"
               disabled={saving}
               onClick={handleSeedDefaults}
-              style={{
-                marginTop: '1rem',
-                background: '#E31C1C',
-                color: '#fff',
-                border: 'none',
-                padding: '0.65rem 1rem',
-                borderRadius: '6px',
-                cursor: saving ? 'wait' : 'pointer',
-                fontWeight: 'bold',
-              }}
             >
               {saving ? 'Adding services…' : 'Add default services'}
             </button>
           ) : (
             <button
+              className="admin-secondary-button"
               onClick={() => setSearchQuery('')}
-              style={{
-                marginTop: '1rem',
-                background: 'transparent',
-                color: '#fff',
-                border: '1px solid #555',
-                padding: '0.65rem 1rem',
-                borderRadius: '6px',
-                cursor: 'pointer',
-              }}
             >
               Clear search
             </button>
@@ -274,49 +230,22 @@ export function ServicesPage() {
                   <td>
                     <strong>{s.name}</strong>
                     {s.description && (
-                      <div style={{ fontSize: '0.75rem', color: '#888' }}>{s.description}</div>
+                      <div className="service-description">{s.description}</div>
                     )}
                   </td>
                   <td>{s.category}</td>
                   <td>{Number(s.price || 0) > 0 ? `₹${Number(s.price).toLocaleString('en-IN')}` : 'Not set'}</td>
                   <td>{Number(s.durationMinutes || 0) > 0 ? `${s.durationMinutes} mins` : 'Not set'}</td>
                   <td>
-                    <span
-                      style={{
-                        padding: '0.2rem 0.6rem',
-                        borderRadius: '4px',
-                        fontSize: '0.75rem',
-                        background: s.status === 'Active' ? '#22c55e20' : '#ef444420',
-                        color: s.status === 'Active' ? '#22c55e' : '#ef4444',
-                      }}
-                    >
+                    <span className={`service-status-badge service-status-badge--${s.status.toLowerCase()}`}>
                       {s.status}
                     </span>
                   </td>
                   <td>
-                    <button
-                      onClick={() => handleEdit(s)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#d1d5db',
-                        cursor: 'pointer',
-                        fontSize: '0.85rem',
-                        marginRight: '0.75rem',
-                      }}
-                    >
+                    <button className="admin-table-action" onClick={() => handleEdit(s)}>
                       Edit
                     </button>
-                    <button
-                      onClick={() => handleDelete(s._id)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#ef4444',
-                        cursor: 'pointer',
-                        fontSize: '0.85rem',
-                      }}
-                    >
+                    <button className="admin-table-action" onClick={() => handleDelete(s._id)}>
                       Delete
                     </button>
                   </td>
@@ -328,46 +257,27 @@ export function ServicesPage() {
       )}
 
       {showAddModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.8)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-          }}
-        >
-          <div
-            style={{
-              background: '#141414',
-              padding: '2rem',
-              borderRadius: '8px',
-              border: '1px solid #333',
-              maxWidth: '450px',
-              width: '100%',
-            }}
-          >
-            <h2 style={{ marginBottom: '1.2rem', color: '#fff' }}>{editingId ? 'Edit Service' : 'Add New Service'}</h2>
-            <form onSubmit={handleSaveService} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.3rem', fontSize: '0.85rem', color: '#aaa' }}>Service Name *</label>
+        <div className="admin-modal-backdrop">
+          <div className="admin-modal">
+            <h2 className="admin-modal-title">{editingId ? 'Edit Service' : 'Add New Service'}</h2>
+            <form className="admin-form" onSubmit={handleSaveService}>
+              <div className="admin-form-field">
+                <label>Service Name *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. PPF Front Bumper"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  style={{ width: '100%', padding: '0.6rem', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '4px' }}
+                  className="admin-form-control"
                 />
               </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.3rem', fontSize: '0.85rem', color: '#aaa' }}>Category *</label>
+              <div className="admin-form-field">
+                <label>Category *</label>
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  style={{ width: '100%', padding: '0.6rem', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '4px' }}
+                  className="admin-form-control"
                 >
                   <option value="Paint Protection">Paint Protection (PPF)</option>
                   <option value="Ceramic Coating">Ceramic Coating</option>
@@ -378,38 +288,38 @@ export function ServicesPage() {
                   <option value="Other">Other / Consultation</option>
                 </select>
               </div>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', marginBottom: '0.3rem', fontSize: '0.85rem', color: '#aaa' }}>Price (₹) *</label>
+              <div className="admin-form-row">
+                <div className="admin-form-field">
+                  <label>Price (₹) *</label>
                   <input
                     type="number"
                     min={0}
                     required
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                    style={{ width: '100%', padding: '0.6rem', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '4px' }}
+                    className="admin-form-control"
                   />
                 </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', marginBottom: '0.3rem', fontSize: '0.85rem', color: '#aaa' }}>Duration (mins)</label>
+                <div className="admin-form-field">
+                  <label>Duration (mins)</label>
                   <input
                     type="number"
                     min={0}
                     value={formData.durationMinutes}
                     onChange={(e) => setFormData({ ...formData, durationMinutes: Number(e.target.value) })}
-                    style={{ width: '100%', padding: '0.6rem', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '4px' }}
+                    className="admin-form-control"
                   />
                 </div>
               </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.3rem', fontSize: '0.85rem', color: '#aaa' }}>Description</label>
+              <div className="admin-form-field">
+                <label>Description</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  style={{ width: '100%', padding: '0.6rem', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '4px', minHeight: '60px' }}
+                  className="admin-form-control"
                 />
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.8rem', marginTop: '1rem' }}>
+              <div className="admin-form-actions">
                 <button
                   type="button"
                   onClick={() => {
@@ -417,14 +327,14 @@ export function ServicesPage() {
                     setEditingId(null);
                     setFormData(emptyForm);
                   }}
-                  style={{ padding: '0.6rem 1rem', background: 'transparent', border: '1px solid #555', color: '#fff', borderRadius: '4px', cursor: 'pointer' }}
+                  className="admin-secondary-button"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  style={{ padding: '0.6rem 1.2rem', background: '#E31C1C', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                  className="admin-primary-button"
                 >
                   {saving ? 'Saving…' : 'Save'}
                 </button>

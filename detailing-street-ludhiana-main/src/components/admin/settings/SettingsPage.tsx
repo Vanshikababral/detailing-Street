@@ -146,7 +146,7 @@ export function SettingsPage() {
     <div className="settings-management">
       <header className="settings-header">
         <div>
-          <span className="dashboard-kicker">CONFIGURATION</span>
+          <span className="dashboard-kicker">Configuration</span>
           <h1 className="settings-title">Settings</h1>
           <p className="settings-subtitle">
             Manage your studio profile, booking rules, and notification preferences.

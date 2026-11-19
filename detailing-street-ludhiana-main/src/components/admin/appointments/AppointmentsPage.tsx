@@ -517,7 +517,7 @@ export function AppointmentsPage() {
     <div className="appointments-management">
       <header className="dashboard-header">
         <div>
-          <span className="appointments-eyebrow">MANAGEMENT <i /> / BOOKINGS</span>
+          <span className="appointments-eyebrow">Management <i /> / Bookings</span>
           <h1 className="dashboard-title">Appointments</h1>
           <p className="dashboard-subtitle">
             Manage and track your detailing bookings.
@@ -563,7 +563,7 @@ export function AppointmentsPage() {
       <section aria-labelledby="appointment-bookings-title" className="appointment-bookings-panel">
         <header className="appointment-bookings-panel-header">
           <div>
-            <span className="appointments-panel-eyebrow">BOOKING MANAGEMENT</span>
+            <span className="appointments-panel-eyebrow">Booking management</span>
             <h2 id="appointment-bookings-title">All bookings</h2>
             <p>{loading ? 'Loading appointments…' : `${filtered.length} of ${appointments.length} bookings`}</p>
           </div>
@@ -735,7 +735,7 @@ export function AppointmentsPage() {
           >
             <header className="appointment-booking-header">
               <div>
-                <span className="dashboard-kicker">GARAGE BOOKING</span>
+                <span className="dashboard-kicker">Garage booking</span>
                 <h2 id="appointment-booking-title">Create appointment</h2>
                 <p>Book a service for a walk-in or an existing customer.</p>
               </div>
@@ -977,7 +977,7 @@ export function AppointmentsPage() {
           <section aria-labelledby="appointment-bill-title" aria-modal="true" className="appointment-bill-modal" role="dialog">
             <header className="appointment-booking-header">
               <div>
-                <span className="appointments-panel-eyebrow">COMPLETED SERVICE</span>
+                <span className="appointments-panel-eyebrow">Completed service</span>
                 <h2 id="appointment-bill-title">Prepare bill</h2>
                 <p>{billAppointment.bookingId || 'Appointment'} · {billAppointment.customerName}</p>
               </div>
@@ -1032,7 +1032,7 @@ export function AppointmentsPage() {
           <article aria-labelledby="appointment-invoice-title" aria-modal="true" className="appointment-invoice" role="dialog">
             <header className="appointment-invoice-header">
               <div>
-                <span className="appointment-invoice-eyebrow">DETAILING STREET · LUDHIANA</span>
+                <span className="appointment-invoice-eyebrow">Detailing Street · Ludhiana</span>
                 <h2 id="appointment-invoice-title">Service Bill</h2>
               </div>
               <div className="appointment-invoice-meta">

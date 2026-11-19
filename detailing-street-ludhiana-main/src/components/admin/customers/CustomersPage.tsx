@@ -77,66 +77,39 @@ export function CustomersPage() {
 
   return (
     <div className="customers-management">
-      <header className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header className="dashboard-header customers-header">
         <div>
-          <span className="dashboard-kicker">DATABASE</span>
+          <span className="dashboard-kicker">Database</span>
           <h1 className="dashboard-title">Customers</h1>
           <p className="dashboard-subtitle">
             Live customer records stored in MongoDB Atlas.
           </p>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          style={{
-            background: '#E31C1C',
-            color: '#fff',
-            border: 'none',
-            padding: '0.6rem 1.2rem',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontWeight: 'bold',
-          }}
-        >
+        <button className="admin-primary-button" onClick={() => setShowAddModal(true)}>
           + Add Customer
         </button>
       </header>
 
-      <div style={{ margin: '1.5rem 0' }}>
+      <div className="admin-search-row">
         <input
+          className="admin-search-input"
           type="text"
           placeholder="Search customers by name, phone, email..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          style={{
-            background: '#141414',
-            border: '1px solid #2a2a2a',
-            padding: '0.6rem 1rem',
-            color: '#fff',
-            borderRadius: '6px',
-            minWidth: '280px',
-          }}
         />
       </div>
 
       {loading ? (
-        <div style={{ padding: '3rem', textAlign: 'center', color: '#888' }}>
+        <div aria-live="polite" className="admin-state admin-state--loading">
           Loading customers from MongoDB...
         </div>
       ) : filtered.length === 0 ? (
-        <div
-          style={{
-            padding: '3rem',
-            textAlign: 'center',
-            background: '#141414',
-            borderRadius: '8px',
-            border: '1px dashed #333',
-            color: '#888',
-          }}
-        >
-          <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: '#fff' }}>
+        <div className="admin-state admin-state--empty">
+          <p className="admin-state-title">
             No customers found in database.
           </p>
-          <p style={{ fontSize: '0.85rem' }}>
+          <p className="admin-state-description">
             Add customers using the &quot;+ Add Customer&quot; button above.
           </p>
         </div>
@@ -167,29 +140,12 @@ export function CustomersPage() {
                   <td>{c.email || '—'}</td>
                   <td>{c.totalVisits || 0}</td>
                   <td>
-                    <span
-                      style={{
-                        padding: '0.2rem 0.6rem',
-                        borderRadius: '4px',
-                        fontSize: '0.75rem',
-                        background: c.type === 'VIP' ? '#f59e0b20' : '#22c55e20',
-                        color: c.type === 'VIP' ? '#f59e0b' : '#22c55e',
-                      }}
-                    >
+                    <span className={`customer-type-badge${c.type === 'VIP' ? ' customer-type-badge--vip' : ''}`}>
                       {c.type || 'New'}
                     </span>
                   </td>
                   <td>
-                    <button
-                      onClick={() => handleDelete(c._id)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#ef4444',
-                        cursor: 'pointer',
-                        fontSize: '0.85rem',
-                      }}
-                    >
+                    <button className="admin-table-action" onClick={() => handleDelete(c._id)}>
                       Delete
                     </button>
                   </td>
@@ -201,77 +157,58 @@ export function CustomersPage() {
       )}
 
       {showAddModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.8)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-          }}
-        >
-          <div
-            style={{
-              background: '#141414',
-              padding: '2rem',
-              borderRadius: '8px',
-              border: '1px solid #333',
-              maxWidth: '450px',
-              width: '100%',
-            }}
-          >
-            <h2 style={{ marginBottom: '1.2rem', color: '#fff' }}>Add New Customer</h2>
-            <form onSubmit={handleAddCustomer} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.3rem', fontSize: '0.85rem', color: '#aaa' }}>Name *</label>
+        <div className="admin-modal-backdrop">
+          <div className="admin-modal">
+            <h2 className="admin-modal-title">Add New Customer</h2>
+            <form className="admin-form" onSubmit={handleAddCustomer}>
+              <div className="admin-form-field">
+                <label>Name *</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  style={{ width: '100%', padding: '0.6rem', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '4px' }}
+                  className="admin-form-control"
                 />
               </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.3rem', fontSize: '0.85rem', color: '#aaa' }}>Phone *</label>
+              <div className="admin-form-field">
+                <label>Phone *</label>
                 <input
                   type="text"
                   required
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  style={{ width: '100%', padding: '0.6rem', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '4px' }}
+                  className="admin-form-control"
                 />
               </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.3rem', fontSize: '0.85rem', color: '#aaa' }}>Email</label>
+              <div className="admin-form-field">
+                <label>Email</label>
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  style={{ width: '100%', padding: '0.6rem', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '4px' }}
+                  className="admin-form-control"
                 />
               </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.3rem', fontSize: '0.85rem', color: '#aaa' }}>Notes</label>
+              <div className="admin-form-field">
+                <label>Notes</label>
                 <textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  style={{ width: '100%', padding: '0.6rem', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '4px', minHeight: '60px' }}
+                  className="admin-form-control"
                 />
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.8rem', marginTop: '1rem' }}>
+              <div className="admin-form-actions">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  style={{ padding: '0.6rem 1rem', background: 'transparent', border: '1px solid #555', color: '#fff', borderRadius: '4px', cursor: 'pointer' }}
+                  className="admin-secondary-button"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  style={{ padding: '0.6rem 1.2rem', background: '#E31C1C', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                  className="admin-primary-button"
                 >
                   Save
                 </button>

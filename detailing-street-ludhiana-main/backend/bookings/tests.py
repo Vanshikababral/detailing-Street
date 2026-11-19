@@ -1,10 +1,15 @@
+import base64
+import hashlib
+import hmac
+import json
 from datetime import timedelta
 import os
 from unittest.mock import MagicMock, Mock, patch
 
 from bson import ObjectId
-from django.test import SimpleTestCase
 from django.utils import timezone
+from django.test import SimpleTestCase
+from pymongo.errors import DuplicateKeyError
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -227,3 +232,198 @@ class MongoDatabaseConfigTests(SimpleTestCase):
         ):
             with self.assertRaisesMessage(ValueError, 'MONGODB_DATABASE must not be empty.'):
                 mongo.get_db()
+
+
+class StaffApiTests(SimpleTestCase):
+    def setUp(self):
+        self.environment = patch.dict(os.environ, {
+            'ADMIN_EMAIL': 'admin@example.com',
+            'ADMIN_SESSION_SECRET': 'test-session-secret',
+        })
+        self.environment.start()
+        self.addCleanup(self.environment.stop)
+
+        payload = {
+            'email': 'admin@example.com',
+            'role': 'Owner',
+            'exp': int(timezone.now().timestamp() * 1000) + 60_000,
+        }
+        payload_base64 = base64.b64encode(
+            json.dumps(payload, separators=(',', ':')).encode('utf-8')
+        ).decode('ascii')
+        signature = hmac.new(
+            b'test-session-secret',
+            payload_base64.encode('ascii'),
+            hashlib.sha256,
+        ).hexdigest()
+
+        self.client = APIClient()
+        self.client.cookies['admin_session'] = f'{payload_base64}.{signature}'
+        self.staff_id = ObjectId('507f1f77bcf86cd799439011')
+        self.document = {
+            '_id': self.staff_id,
+            'name': 'Test Detailer',
+            'phone': '+91 98765 43210',
+            'phoneNormalized': '919876543210',
+            'email': 'detailer@example.test',
+            'role': 'Detailing Specialist',
+            'specialization': 'Paint protection film',
+            'joiningDate': timezone.now(),
+            'status': 'Active',
+            'notes': '',
+            'createdAt': timezone.now(),
+            'updatedAt': timezone.now(),
+        }
+        self.collection = Mock()
+        self.collection.insert_one.return_value.inserted_id = self.staff_id
+        self.get_collection_patch = patch(
+            'bookings.staff_views.get_collection',
+            return_value=self.collection,
+        )
+        self.get_collection = self.get_collection_patch.start()
+        self.addCleanup(self.get_collection_patch.stop)
+
+    def test_staff_api_rejects_requests_without_admin_session(self):
+        self.client.cookies.clear()
+
+        response = self.client.get('/api/staff/')
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.data, {
+            'success': False,
+            'error': 'Admin session required.',
+        })
+        self.get_collection.assert_not_called()
+
+    def test_staff_list_returns_database_metrics_and_records(self):
+        cursor = MagicMock()
+        cursor.sort.return_value = cursor
+        cursor.skip.return_value = cursor
+        cursor.limit.return_value = [self.document]
+        self.collection.find.return_value = cursor
+        self.collection.count_documents.side_effect = [1, 5, 4, 1, 2]
+
+        response = self.client.get('/api/staff/?q=detailer&role=Detailing%20Specialist&status=Active')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['staff'][0]['_id'], str(self.staff_id))
+        self.assertEqual(response.data['metrics'], {
+            'total': 5,
+            'active': 4,
+            'inactive': 1,
+            'detailingSpecialists': 2,
+        })
+        self.collection.find.assert_called_once_with({
+            'role': 'Detailing Specialist',
+            'status': 'Active',
+            '$or': [
+                {'name': {'$regex': 'detailer', '$options': 'i'}},
+                {'phone': {'$regex': 'detailer', '$options': 'i'}},
+            ],
+        })
+
+    def test_create_staff_persists_normalized_phone_and_returns_record(self):
+        payload = {
+            'name': ' New Team Member ',
+            'phone': '+91 (98765) 43210',
+            'email': 'NEW@example.test',
+            'role': 'Detailing Specialist',
+            'specialization': 'PPF',
+            'joiningDate': '2025-03-10',
+            'status': 'Active',
+            'notes': 'Experienced installer.',
+        }
+
+        response = self.client.post('/api/staff/', payload, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['staff']['_id'], str(self.staff_id))
+        self.collection.create_index.assert_called_once()
+        inserted = self.collection.insert_one.call_args.args[0]
+        self.assertEqual(inserted['name'], 'New Team Member')
+        self.assertEqual(inserted['phoneNormalized'], '919876543210')
+        self.assertEqual(inserted['email'], 'new@example.test')
+        self.assertEqual(inserted['joiningDate'].date().isoformat(), '2025-03-10')
+
+    def test_invalid_staff_input_is_rejected_without_database_write(self):
+        response = self.client.post(
+            '/api/staff/',
+            {
+                'name': 'New Team Member',
+                'phone': '123',
+                'role': 'Unknown role',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(response.data['success'])
+        self.collection.insert_one.assert_not_called()
+
+    def test_duplicate_staff_phone_returns_conflict(self):
+        self.collection.insert_one.side_effect = DuplicateKeyError('duplicate phone')
+
+        response = self.client.post(
+            '/api/staff/',
+            {
+                'name': 'Another Detailer',
+                'phone': '9876543210',
+                'role': 'Technician',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertIn('already exists', response.data['error'])
+
+    def test_update_status_and_delete_staff_record(self):
+        self.collection.find_one_and_update.return_value = {
+            **self.document,
+            'status': 'Inactive',
+        }
+        patch_response = self.client.patch(
+            f'/api/staff/{self.staff_id}/',
+            {'status': 'Inactive'},
+            format='json',
+        )
+
+        self.assertEqual(patch_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(patch_response.data['staff']['status'], 'Inactive')
+
+        self.collection.find_one_and_delete.return_value = self.document
+        delete_response = self.client.delete(f'/api/staff/{self.staff_id}/')
+
+        self.assertEqual(delete_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(delete_response.data, {'success': True})
+
+    def test_edit_staff_details_updates_record_without_replacing_created_at(self):
+        updated_document = {
+            **self.document,
+            'name': 'Updated Team Member',
+            'phone': '9876543210',
+            'phoneNormalized': '9876543210',
+        }
+        self.collection.find_one_and_update.return_value = updated_document
+        payload = {
+            'name': 'Updated Team Member',
+            'phone': '9876543210',
+            'role': 'Manager',
+            'status': 'Active',
+        }
+
+        response = self.client.put(
+            f'/api/staff/{self.staff_id}/',
+            payload,
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['staff']['name'], 'Updated Team Member')
+        self.assertEqual(
+            self.collection.find_one_and_update.call_args.args[1]['$set']['phoneNormalized'],
+            '9876543210',
+        )
+        self.assertNotIn(
+            'createdAt',
+            self.collection.find_one_and_update.call_args.args[1]['$set'],
+        )

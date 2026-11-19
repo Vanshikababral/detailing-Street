@@ -98,7 +98,7 @@ export function DashboardOverview() {
     <div className="dashboard-overview">
       <header className="overview-header">
         <div className="overview-heading">
-          <span className="overview-eyebrow">DETAILING STREET <i /> LUDHIANA</span>
+          <span className="overview-eyebrow">Detailing Street <i /> Ludhiana</span>
           <h1 id="dashboard-title">Dashboard</h1>
           <p>Welcome back, Admin. Here’s what’s happening with your business today.</p>
           <p className="overview-data-note">Connected directly to MongoDB Atlas via Django</p>
@@ -111,69 +111,68 @@ export function DashboardOverview() {
         </div>
       </header>
 
-      {/* Metrics Row 1 */}
-      <section aria-label="Business metrics" className="overview-metrics">
-        <MetricCard
-          label="Total Bookings"
-          value={loading ? '...' : data.metrics.totalBookings}
-          trend="Live database count"
-          trendTone="positive"
-          icon="appointments"
-        />
-        <MetricCard
-          label="Pending Appointments"
-          value={loading ? '...' : data.metrics.pendingAppointments}
-          trend="Needs attention"
-          trendTone="attention"
-          icon="clock"
-        />
-        <MetricCard
-          label="Revenue"
-          value={loading ? '...' : `₹${data.metrics.revenue.toLocaleString('en-IN')}`}
-          trend="From completed jobs"
-          trendTone="positive"
-          icon="revenue"
-        />
-        <MetricCard
-          label="Completed Services"
-          value={loading ? '...' : data.metrics.completedServices}
-          trend="Finished work"
-          trendTone="positive"
-          icon="completed"
-        />
-      </section>
-
-      {/* Metrics Row 2 */}
-      <section aria-label="Database entity counts" className="overview-metrics" style={{ marginTop: '1.25rem' }}>
-        <MetricCard
-          label="Registered Customers"
-          value={loading ? '...' : data.metrics.totalCustomers}
-          trend="Active in MongoDB"
-          trendTone="neutral"
-          icon="customers"
-        />
-        <MetricCard
-          label="Registered Vehicles"
-          value={loading ? '...' : data.metrics.totalVehicles}
-          trend="In fleet records"
-          trendTone="neutral"
-          icon="vehicles"
-        />
-        <MetricCard
-          label="Offered Services"
-          value={loading ? '...' : data.metrics.totalServices}
-          trend="In service catalog"
-          trendTone="neutral"
-          icon="services"
-        />
+      <section aria-label="Business metrics" className="overview-metrics-group">
+        <div className="overview-metric-row overview-metric-row--primary">
+          <MetricCard
+            label="Total Bookings"
+            value={loading ? '...' : data.metrics.totalBookings}
+            trend="Live database count"
+            trendTone="positive"
+            icon="appointments"
+          />
+          <MetricCard
+            label="Pending Appointments"
+            value={loading ? '...' : data.metrics.pendingAppointments}
+            trend="Needs attention"
+            trendTone="attention"
+            icon="clock"
+          />
+          <MetricCard
+            label="Revenue"
+            value={loading ? '...' : `₹${data.metrics.revenue.toLocaleString('en-IN')}`}
+            trend="From completed jobs"
+            trendTone="positive"
+            icon="revenue"
+          />
+          <MetricCard
+            label="Completed Services"
+            value={loading ? '...' : data.metrics.completedServices}
+            trend="Finished work"
+            trendTone="positive"
+            icon="completed"
+          />
+        </div>
+        <div aria-label="Database entity counts" className="overview-metric-row overview-metric-row--secondary">
+          <MetricCard
+            label="Registered Customers"
+            value={loading ? '...' : data.metrics.totalCustomers}
+            trend="Active in MongoDB"
+            trendTone="neutral"
+            icon="customers"
+          />
+          <MetricCard
+            label="Registered Vehicles"
+            value={loading ? '...' : data.metrics.totalVehicles}
+            trend="In fleet records"
+            trendTone="neutral"
+            icon="vehicles"
+          />
+          <MetricCard
+            label="Offered Services"
+            value={loading ? '...' : data.metrics.totalServices}
+            trend="In service catalog"
+            trendTone="neutral"
+            icon="services"
+          />
+        </div>
       </section>
 
       {/* Clean Table Panel for Recent Appointments */}
-      <div className="overview-grid" style={{ marginTop: '1.75rem', gridTemplateColumns: '1fr' }}>
+      <div className="overview-grid">
         <section aria-labelledby="recent-appointments-title" className="overview-panel recent-appointments-panel">
           <div className="overview-panel-header">
             <div>
-              <span className="panel-kicker">DATABASE ACTIVITY</span>
+              <span className="panel-kicker">Database activity</span>
               <h2 id="recent-appointments-title">Recent Appointments</h2>
             </div>
             <Link href="/admin/appointments" className="panel-text-action">
@@ -184,13 +183,13 @@ export function DashboardOverview() {
           <p className="panel-inline-note">Live appointment records retrieved from MongoDB Atlas</p>
 
           {loading ? (
-            <div style={{ padding: '3rem', textAlign: 'center', color: '#888' }}>
+            <div className="overview-loading-state" aria-live="polite">
               Loading live records from database...
             </div>
           ) : data.recentAppointments.length === 0 ? (
-            <div style={{ padding: '3rem', textAlign: 'center', color: '#888' }}>
-              <p style={{ fontSize: '1rem', marginBottom: '0.5rem', color: '#fff' }}>No appointments in database yet.</p>
-              <p style={{ fontSize: '0.85rem' }}>Customer bookings submitted on the website will appear here automatically.</p>
+            <div className="overview-empty-state">
+              <p>No appointments in database yet.</p>
+              <p>Customer bookings submitted on the website will appear here automatically.</p>
             </div>
           ) : (
             <div className="appointments-table-scroll" role="region" aria-label="Recent appointments table" tabIndex={0}>

@@ -1,7 +1,20 @@
 import type { Metadata } from 'next';
+import { Orbitron, Rajdhani } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
 import LayoutWrapper from '@/components/layout/LayoutWrapper';
+
+const rajdhani = Rajdhani({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-rajdhani',
+});
+
+const orbitron = Orbitron({
+  subsets: ['latin'],
+  weight: ['500', '600'],
+  variable: '--font-orbitron',
+});
 
 export const metadata: Metadata = {
   title: {
@@ -138,7 +151,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#E31C1C" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
       </head>
-      <body className="antialiased">
+      <body className={`${rajdhani.variable} ${orbitron.variable} antialiased`}>
         <LayoutWrapper>{children}</LayoutWrapper>
         <Toaster
           position="bottom-right"
