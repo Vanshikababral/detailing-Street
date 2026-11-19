@@ -106,8 +106,11 @@ export function Topbar() {
       setNotificationsError(null);
       try {
         const response = await fetch('/api/admin/dashboard', { cache: 'no-store' });
+        if (response.status === 401) {
+          window.location.href = '/admin/login';
+          return;
+        }
         if (!response.ok) {
-          if (active) setNotificationsError('Could not load pending appointments.');
           return;
         }
         const data: DashboardNotificationResponse = await response.json();
