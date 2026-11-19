@@ -3,9 +3,21 @@ import { sendStatusUpdateEmail } from '@/lib/mailer';
 
 const DJANGO_URL = process.env.DJANGO_API_BASE_URL || 'http://127.0.0.1:8000';
 
-export async function GET() {
+function getForwardHeaders(request: NextRequest, isJson = false): HeadersInit {
+  const cookie = request.headers.get('cookie') || '';
+  const headers: Record<string, string> = { cookie };
+  if (isJson) {
+    headers['Content-Type'] = 'application/json';
+  }
+  return headers;
+}
+
+export async function GET(request: NextRequest) {
   try {
-    const res = await fetch(`${DJANGO_URL}/api/appointments/`, { cache: 'no-store' });
+    const res = await fetch(`${DJANGO_URL}/api/appointments/`, {
+      cache: 'no-store',
+      headers: getForwardHeaders(request),
+    });
     const data = await res.json();
     return NextResponse.json(data);
   } catch (err: any) {
@@ -18,7 +30,7 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const res = await fetch(`${DJANGO_URL}/api/appointments/`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getForwardHeaders(request, true),
       body: JSON.stringify(body),
     });
     const data = await res.json();
@@ -46,6 +58,7 @@ export async function DELETE(request: NextRequest) {
     const id = searchParams.get('id');
     const res = await fetch(`${DJANGO_URL}/api/appointments/?id=${id}`, {
       method: 'DELETE',
+      headers: getForwardHeaders(request),
     });
     const data = await res.json();
     return NextResponse.json(data);

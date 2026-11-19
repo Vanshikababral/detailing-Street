@@ -4,13 +4,14 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from bson import ObjectId
 
 from .mongo import get_collection
 from .serializers import AppointmentCreateSerializer, SERVICES
+from .staff_auth import AdminSessionAuthentication
 from .sync import sync_customer, sync_vehicle
 
 def generate_booking_id() -> str:
@@ -92,7 +93,8 @@ class AppointmentCreateView(APIView):
         )
 
 class AppointmentListView(APIView):
-    permission_classes = [AllowAny]
+    authentication_classes = [AdminSessionAuthentication]
+    permission_classes = [IsAuthenticated]  # Admin only
 
     def get(self, request, *args, **kwargs):
         coll = get_collection('appointments')
@@ -149,7 +151,8 @@ class AppointmentListView(APIView):
         return Response({'success': True})
 
 class DashboardStatsView(APIView):
-    permission_classes = [AllowAny]
+    authentication_classes = [AdminSessionAuthentication]
+    permission_classes = [IsAuthenticated]  # Admin only
 
     def get(self, request, *args, **kwargs):
         appointments_coll = get_collection('appointments')

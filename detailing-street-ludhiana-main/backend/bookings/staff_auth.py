@@ -77,6 +77,12 @@ def verify_admin_session(token: str | None) -> str | None:
 class AdminSessionAuthentication(BaseAuthentication):
     def authenticate(self, request):
         token = request.COOKIES.get(ADMIN_COOKIE_NAME)
+        if not token:
+            auth_header = request.headers.get('Authorization', '')
+            if auth_header.startswith('Bearer '):
+                token = auth_header[7:].strip()
+            elif auth_header:
+                token = auth_header.strip()
         email = verify_admin_session(token)
         if not email:
             return None

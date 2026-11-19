@@ -1,10 +1,14 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 const DJANGO_URL = process.env.DJANGO_API_BASE_URL || 'http://127.0.0.1:8000';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const res = await fetch(`${DJANGO_URL}/api/dashboard/`, { cache: 'no-store' });
+    const cookie = request.headers.get('cookie') || '';
+    const res = await fetch(`${DJANGO_URL}/api/dashboard/`, {
+      cache: 'no-store',
+      headers: { cookie },
+    });
     const data = await res.json();
     return NextResponse.json(data);
   } catch (err: any) {
