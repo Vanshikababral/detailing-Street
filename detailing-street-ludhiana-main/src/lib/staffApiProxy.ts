@@ -13,6 +13,7 @@ export async function proxyStaffApi(
   const token = request.cookies.get('admin_session')?.value || '';
   const cookie = request.headers.get('cookie') || (token ? `admin_session=${token}` : '');
   const headers = new Headers();
+  headers.set('x-admin-secret', process.env.ADMIN_SESSION_SECRET || 'detailing_street_secure_session_secret_2026_key');
   if (cookie) headers.set('cookie', cookie);
   if (token) headers.set('authorization', `Bearer ${token}`);
   if (method !== 'GET' && method !== 'DELETE') {

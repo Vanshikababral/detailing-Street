@@ -150,10 +150,6 @@ export function StaffPageContent() {
       setPageCount(data.pagination.pageCount);
     } catch (requestError) {
       if (requestError instanceof Error && requestError.name === 'AbortError') return;
-      if (response && response.status === 401 && typeof window !== 'undefined') {
-        window.location.href = '/admin/login';
-        return;
-      }
       setError(requestError instanceof Error ? requestError.message : 'Staff records could not be loaded.');
     } finally {
       if (!signal?.aborted) setLoading(false);

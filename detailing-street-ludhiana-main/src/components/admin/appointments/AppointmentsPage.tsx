@@ -140,8 +140,8 @@ export function AppointmentsPage() {
     try {
       setLoading(true);
       const res = await fetch('/api/admin/appointments');
-      if (res.status === 401) {
-        window.location.href = '/admin/login';
+      if (!res.ok) {
+        setLoading(false);
         return;
       }
       const data = await res.json();

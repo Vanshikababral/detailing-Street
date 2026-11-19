@@ -78,8 +78,8 @@ export function DashboardOverview() {
     async function fetchDashboard() {
       try {
         const res = await fetch('/api/admin/dashboard');
-        if (res.status === 401) {
-          window.location.href = '/admin/login';
+        if (!res.ok) {
+          setLoading(false);
           return;
         }
         const json = await res.json();

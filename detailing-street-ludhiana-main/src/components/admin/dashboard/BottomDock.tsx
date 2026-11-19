@@ -38,10 +38,6 @@ export function BottomDock() {
     async function fetchPendingAppointments() {
       try {
         const response = await fetch('/api/admin/dashboard', { cache: 'no-store' });
-        if (response.status === 401) {
-          window.location.href = '/admin/login';
-          return;
-        }
         if (!response.ok) return;
         const data = await response.json();
         if (active && data.success && Number.isFinite(data.metrics?.pendingAppointments)) {

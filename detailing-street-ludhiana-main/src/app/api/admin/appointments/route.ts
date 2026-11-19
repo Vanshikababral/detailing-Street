@@ -6,7 +6,9 @@ const DJANGO_URL = process.env.DJANGO_API_BASE_URL || 'http://127.0.0.1:8000';
 function getForwardHeaders(request: NextRequest, isJson = false): HeadersInit {
   const token = request.cookies.get('admin_session')?.value || '';
   const cookieHeader = request.headers.get('cookie') || (token ? `admin_session=${token}` : '');
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = {
+    'X-Admin-Secret': process.env.ADMIN_SESSION_SECRET || 'detailing_street_secure_session_secret_2026_key',
+  };
   if (cookieHeader) headers['Cookie'] = cookieHeader;
   if (token) headers['Authorization'] = `Bearer ${token}`;
   if (isJson) {
