@@ -103,6 +103,25 @@ export function ServicesPage() {
     }
   };
 
+  const handleToggleStatus = async (service: ServiceRecord) => {
+    const newStatus = service.status === 'Active' ? 'Inactive' : 'Active';
+    try {
+      const res = await fetch('/api/admin/services', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ _id: service._id, status: newStatus }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setServices((prev) =>
+          prev.map((s) => (s._id === service._id ? { ...s, status: newStatus } : s))
+        );
+      }
+    } catch (err) {
+      console.error('Failed to toggle service status:', err);
+    }
+  };
+
   const handleEdit = (service: ServiceRecord) => {
     setEditingId(service._id);
     setFormData({
@@ -237,9 +256,14 @@ export function ServicesPage() {
                   <td>{Number(s.price || 0) > 0 ? `₹${Number(s.price).toLocaleString('en-IN')}` : 'Not set'}</td>
                   <td>{Number(s.durationMinutes || 0) > 0 ? `${s.durationMinutes} mins` : 'Not set'}</td>
                   <td>
-                    <span className={`service-status-badge service-status-badge--${s.status.toLowerCase()}`}>
+                    <button
+                      type="button"
+                      title={`Click to switch to ${s.status === 'Active' ? 'Inactive' : 'Active'}`}
+                      className={`service-status-badge service-status-badge--${s.status.toLowerCase()} service-status-badge--btn`}
+                      onClick={() => handleToggleStatus(s)}
+                    >
                       {s.status}
-                    </span>
+                    </button>
                   </td>
                   <td>
                     <button className="admin-table-action" onClick={() => handleEdit(s)}>
@@ -286,6 +310,17 @@ export function ServicesPage() {
                   <option value="Window Tinting">Window Tinting</option>
                   <option value="Accessories">Accessories</option>
                   <option value="Other">Other / Consultation</option>
+                </select>
+              </div>
+              <div className="admin-form-field">
+                <label>Status *</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value as 'Active' | 'Inactive' })}
+                  className="admin-form-control"
+                >
+                  <option value="Active">Active (Available for booking)</option>
+                  <option value="Inactive">Inactive (Temporarily paused)</option>
                 </select>
               </div>
               <div className="admin-form-row">

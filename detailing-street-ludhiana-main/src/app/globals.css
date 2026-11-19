@@ -6493,6 +6493,19 @@ button {
   color: #a6adb7;
 }
 
+.service-status-badge--btn {
+  cursor: pointer;
+  transition: opacity 140ms ease, transform 140ms ease;
+  user-select: none;
+}
+.service-status-badge--btn:hover {
+  opacity: 0.82;
+  transform: scale(1.05);
+}
+.service-status-badge--btn:active {
+  transform: scale(0.96);
+}
+
 .service-row-actions {
   display: flex;
   min-width: 177px;
