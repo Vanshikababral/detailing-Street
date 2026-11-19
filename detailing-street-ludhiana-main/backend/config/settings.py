@@ -68,6 +68,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+# No SQL database — all data lives in MongoDB Atlas via pymongo.
+# The dummy backend deliberately rejects any ORM/SQL access attempt.
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.dummy',
