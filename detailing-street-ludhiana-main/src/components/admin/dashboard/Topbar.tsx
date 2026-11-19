@@ -106,9 +106,14 @@ export function Topbar() {
       setNotificationsError(null);
       try {
         const response = await fetch('/api/admin/dashboard', { cache: 'no-store' });
+        if (!response.ok) {
+          if (active) setNotificationsError('Could not load pending appointments.');
+          return;
+        }
         const data: DashboardNotificationResponse = await response.json();
-        if (!response.ok || !data.success) {
-          throw new Error(data.error || `Dashboard request failed with status ${response.status}`);
+        if (!data || !data.success) {
+          if (active) setNotificationsError(data?.error || 'Could not load pending appointments.');
+          return;
         }
 
         const recentPending = (data.recentAppointments || [])
@@ -119,7 +124,6 @@ export function Topbar() {
           setPendingAppointments(recentPending);
         }
       } catch (error) {
-        console.error('Failed to load dashboard notifications:', error);
         if (active) setNotificationsError('Could not load pending appointments. Please try again.');
       } finally {
         if (active) {

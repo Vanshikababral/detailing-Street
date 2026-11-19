@@ -4,8 +4,11 @@ import { sendStatusUpdateEmail } from '@/lib/mailer';
 const DJANGO_URL = process.env.DJANGO_API_BASE_URL || 'http://127.0.0.1:8000';
 
 function getForwardHeaders(request: NextRequest, isJson = false): HeadersInit {
-  const cookie = request.headers.get('cookie') || '';
-  const headers: Record<string, string> = { cookie };
+  const token = request.cookies.get('admin_session')?.value || '';
+  const cookieHeader = request.headers.get('cookie') || (token ? `admin_session=${token}` : '');
+  const headers: Record<string, string> = {};
+  if (cookieHeader) headers['Cookie'] = cookieHeader;
+  if (token) headers['Authorization'] = `Bearer ${token}`;
   if (isJson) {
     headers['Content-Type'] = 'application/json';
   }
@@ -19,7 +22,7 @@ export async function GET(request: NextRequest) {
       headers: getForwardHeaders(request),
     });
     const data = await res.json();
-    return NextResponse.json(data);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 503 });
   }
@@ -46,7 +49,7 @@ export async function PATCH(request: NextRequest) {
       }).catch((e) => console.error('[Mailer Error]:', e));
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 503 });
   }
@@ -61,7 +64,7 @@ export async function DELETE(request: NextRequest) {
       headers: getForwardHeaders(request),
     });
     const data = await res.json();
-    return NextResponse.json(data);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 503 });
   }
