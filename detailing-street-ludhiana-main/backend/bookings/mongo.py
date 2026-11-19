@@ -19,7 +19,13 @@ def get_mongo_client() -> MongoClient:
         uri = os.environ.get('MONGODB_URI')
         if not uri:
             raise ValueError('MONGODB_URI not found in environment variables.')
-        _client = MongoClient(uri, serverSelectionTimeoutMS=5000)
+        _client = MongoClient(
+            uri,
+            serverSelectionTimeoutMS=5000,
+            maxPoolSize=50,
+            minPoolSize=5,
+            maxIdleTimeMS=45000,
+        )
     return _client
 
 def get_db() -> Database:

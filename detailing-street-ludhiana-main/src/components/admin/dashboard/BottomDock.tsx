@@ -85,6 +85,7 @@ export function BottomDock() {
         aria-current={active ? 'page' : undefined}
         className={`dock-item${active ? ' dock-item--active' : ''}`}
         href={item.href}
+        prefetch={true}
         key={item.href}
         onClick={() => setMoreOpen(false)}
       >
@@ -137,6 +138,7 @@ export function BottomDock() {
                     aria-current={active ? 'page' : undefined}
                     className={`dock-more-item${active ? ' dock-more-item--active' : ''}`}
                     href={item.href}
+                    prefetch={true}
                     key={item.href}
                     onClick={() => setMoreOpen(false)}
                     role="menuitem"
