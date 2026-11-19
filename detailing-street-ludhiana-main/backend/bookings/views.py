@@ -129,6 +129,23 @@ class AppointmentListView(APIView):
 
         coll = get_collection('appointments')
         updated = coll.find_one_and_update(query, {'$set': update_fields}, return_document=True)
+
+        if updated and new_status == 'Completed':
+            vehicle_reg = (updated.get('vehicleRegistration') or '').strip().upper()
+            amt = float(updated.get('amount') or 0)
+            today_date = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d')
+            if vehicle_reg:
+                get_collection('vehicles').update_one(
+                    {'registration': vehicle_reg},
+                    {
+                        '$inc': {'serviceCount': 1, 'totalSpent': amt},
+                        '$set': {
+                            'lastServiced': today_date,
+                            'updatedAt': datetime.datetime.now(datetime.timezone.utc),
+                        },
+                    }
+                )
+
         return Response({'success': True, 'appointment': serialize_mongo_doc(updated)})
 
     def delete(self, request, *args, **kwargs):
