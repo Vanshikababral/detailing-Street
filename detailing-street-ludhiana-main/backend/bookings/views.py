@@ -1,10 +1,15 @@
 import datetime
+import os
 import secrets
+from pathlib import Path
+
+import jwt
+from dotenv import load_dotenv
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from bson import ObjectId
@@ -12,6 +17,13 @@ from bson import ObjectId
 from .mongo import get_collection
 from .serializers import AppointmentCreateSerializer, SERVICES
 from .sync import sync_customer, sync_vehicle
+
+# Admin credentials — same values as Next.js reads from .env.local
+_ROOT = Path(__file__).resolve().parent.parent.parent
+load_dotenv(_ROOT / '.env.local')
+_SECRET = os.environ.get('ADMIN_SESSION_SECRET', 'detailing_street_secure_session_secret_2026_key')
+_ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', '').strip().lower()
+_ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', '').strip()
 
 def generate_booking_id() -> str:
     today_str = timezone.localdate().strftime('%Y%m%d')
@@ -92,7 +104,7 @@ class AppointmentCreateView(APIView):
         )
 
 class AppointmentListView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]  # Admin only
 
     def get(self, request, *args, **kwargs):
         coll = get_collection('appointments')
@@ -149,7 +161,7 @@ class AppointmentListView(APIView):
         return Response({'success': True})
 
 class DashboardStatsView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]  # Admin only
 
     def get(self, request, *args, **kwargs):
         appointments_coll = get_collection('appointments')
@@ -187,3 +199,46 @@ def health_check(request):
         'database': 'MongoDB Atlas',
         'service': 'detailing-street-ludhiana-api'
     })
+
+
+class AdminLoginView(APIView):
+    """
+    POST /api/auth/login/
+    Body: { "email": "...", "password": "..." }
+    Returns: { "success": true, "token": "<jwt>", "email": "...", "role": "Owner" }
+    No authentication required — this is the endpoint that issues tokens.
+    """
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = str(request.data.get('email', '')).strip().lower()
+        password = str(request.data.get('password', '')).strip()
+
+        if not email or not password:
+            return Response(
+                {'success': False, 'error': 'Email and password are required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if email != _ADMIN_EMAIL or password != _ADMIN_PASSWORD:
+            return Response(
+                {'success': False, 'error': 'Invalid email or password.'},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        payload = {
+            'email': email,
+            'role': 'Owner',
+            'iat': datetime.datetime.utcnow(),
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24),
+        }
+        token = jwt.encode(payload, _SECRET, algorithm='HS256')
+
+        return Response({
+            'success': True,
+            'token': token,
+            'email': email,
+            'role': 'Owner',
+        }, status=status.HTTP_200_OK)
+
