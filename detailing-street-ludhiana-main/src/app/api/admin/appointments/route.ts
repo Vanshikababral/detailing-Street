@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendStatusUpdateEmail } from '@/lib/mailer';
-import { getDjangoToken } from '@/lib/djangoAuth';
 
 const DJANGO_URL = process.env.DJANGO_API_BASE_URL || 'http://127.0.0.1:8000';
 
 export async function GET() {
   try {
-    const token = await getDjangoToken();
-    const res = await fetch(`${DJANGO_URL}/api/appointments/`, {
-      cache: 'no-store',
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await fetch(`${DJANGO_URL}/api/appointments/`, { cache: 'no-store' });
     const data = await res.json();
     return NextResponse.json(data);
   } catch (err: any) {
@@ -21,10 +16,9 @@ export async function GET() {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
-    const token = await getDjangoToken();
     const res = await fetch(`${DJANGO_URL}/api/appointments/`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
     const data = await res.json();
@@ -50,10 +44,8 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    const token = await getDjangoToken();
     const res = await fetch(`${DJANGO_URL}/api/appointments/?id=${id}`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` },
     });
     const data = await res.json();
     return NextResponse.json(data);
