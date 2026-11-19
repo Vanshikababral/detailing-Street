@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { Icon } from './Icon';
+import { GlobalSearch } from './GlobalSearch';
 
 type MenuName = 'business' | 'notifications' | 'profile';
 
@@ -162,10 +163,7 @@ export function Topbar() {
 
   return (
     <header className="topbar">
-      <label className="global-search">
-        <Icon name="search" />
-        <input aria-label="Search dashboard (not connected)" placeholder="Search dashboard..." />
-      </label>
+      <GlobalSearch />
 
       <div className="topbar-actions" ref={topbarRef}>
         <Link aria-label="View public website" className="main-website-link" href="/">
