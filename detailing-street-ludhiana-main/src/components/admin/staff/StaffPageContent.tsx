@@ -136,8 +136,9 @@ export function StaffPageContent() {
 
     setLoading(true);
     setError('');
+    let response: Response | undefined;
     try {
-      const response = await fetch(`/api/admin/staff?${params.toString()}`, {
+      response = await fetch(`/api/admin/staff?${params.toString()}`, {
         cache: 'no-store',
         signal,
       });
@@ -149,7 +150,10 @@ export function StaffPageContent() {
       setPageCount(data.pagination.pageCount);
     } catch (requestError) {
       if (requestError instanceof Error && requestError.name === 'AbortError') return;
-      console.error('Failed to load staff directory:', requestError);
+      if (response && response.status === 401 && typeof window !== 'undefined') {
+        window.location.href = '/admin/login';
+        return;
+      }
       setError(requestError instanceof Error ? requestError.message : 'Staff records could not be loaded.');
     } finally {
       if (!signal?.aborted) setLoading(false);

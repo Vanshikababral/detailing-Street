@@ -10,9 +10,11 @@ export async function proxyStaffApi(
   const djangoBaseUrl = (process.env.DJANGO_API_BASE_URL || 'http://127.0.0.1:8000')
     .replace(/\/+$/, '');
   const query = method === 'GET' ? request.nextUrl.search : '';
-  const cookie = request.headers.get('cookie');
+  const token = request.cookies.get('admin_session')?.value || '';
+  const cookie = request.headers.get('cookie') || (token ? `admin_session=${token}` : '');
   const headers = new Headers();
   if (cookie) headers.set('cookie', cookie);
+  if (token) headers.set('authorization', `Bearer ${token}`);
   if (method !== 'GET' && method !== 'DELETE') {
     headers.set('content-type', request.headers.get('content-type') || 'application/json');
   }
